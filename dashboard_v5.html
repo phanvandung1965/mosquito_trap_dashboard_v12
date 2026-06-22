@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mosquito Trap Dashboard V5</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 16px; background:#f7f9fc; }
+    .grid { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:16px; }
+    .card { background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .label { color:#666; font-size:12px; }
+    .val { font-size:24px; font-weight:700; }
+    .filters { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin:16px 0; }
+    select { width:100%; padding:8px; border-radius:8px; border:1px solid #ddd; }
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; }
+    th,td { border-bottom:1px solid #eee; padding:8px; text-align:left; font-size:14px; }
+    th { background:#f1f4f9; }
+    @media (max-width: 900px) { .grid,.filters { grid-template-columns:1fr 1fr; } }
+    @media (max-width: 600px) { .grid,.filters { grid-template-columns:1fr; } .val { font-size:20px; } }
+  </style>
+</head>
+<body>
+  <h2>Mosquito Trap Dashboard V5</h2>
+  <div class="grid">
+    <div class="card"><div class="label">Tổng muỗi</div><div id="kpiTotal" class="val">139</div></div>
+    <div class="card"><div class="label">Số bản ghi</div><div id="kpiRecords" class="val">6</div></div>
+    <div class="card"><div class="label">Số khu vực</div><div id="kpiAreas" class="val">3</div></div>
+    <div class="card"><div class="label">Số bẫy</div><div id="kpiTraps" class="val">4</div></div>
+  </div>
+
+  <div class="filters">
+    <select id="fDate"><option value="">Tất cả ngày</option></select>
+    <select id="fArea"><option value="">Tất cả khu vực</option></select>
+    <select id="fTrap"><option value="">Tất cả bẫy</option></select>
+    <select id="fMosq"><option value="">Tất cả loài</option></select>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;"><canvas id="areaChart" height="90"></canvas></div>
+
+  <table>
+    <thead><tr><th>date</th><th>area</th><th>trap</th><th>mosquito_name</th><th>number_of_mosquitoes</th></tr></thead>
+    <tbody id="tb"></tbody>
+  </table>
+
+<script>
+const data = [{"date": "2026-03-19 06:00:00", "area": "Khu vực Trung tâm", "trap": "TRAP-HCM-001", "mosquito_name": "aedes", "number_of_mosquitoes": 23}, {"date": "2026-03-19 06:00:00", "area": "Khu vực Trung tâm", "trap": "TRAP-HCM-002", "mosquito_name": "aedes", "number_of_mosquitoes": 31}, {"date": "2026-03-19 06:00:00", "area": "Khu vực Đông Bắc", "trap": "TRAP-HCM-010", "mosquito_name": "culex", "number_of_mosquitoes": 12}, {"date": "2026-03-19 06:00:00", "area": "Khu vực Tây Nam", "trap": "TRAP-HCM-015", "mosquito_name": "culex", "number_of_mosquitoes": 4}, {"date": "2026-03-19 12:00:00", "area": "Khu vực Trung tâm", "trap": "TRAP-HCM-001", "mosquito_name": "aedes", "number_of_mosquitoes": 29}, {"date": "2026-03-19 12:00:00", "area": "Khu vực Trung tâm", "trap": "TRAP-HCM-002", "mosquito_name": "aedes", "number_of_mosquitoes": 40}];
+
+function uniq(arr, key) { return [...new Set(arr.map(x => key(x)).filter(Boolean))].sort(); }
+function fill(id, vals) {
+  const el = document.getElementById(id);
+  vals.forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+}
+fill('fDate', uniq(data, x=>x.date.slice(0,10)));
+fill('fArea', uniq(data, x=>x.area));
+fill('fTrap', uniq(data, x=>x.trap));
+fill('fMosq', uniq(data, x=>x.mosquito_name));
+
+function filtered() {
+  const d=document.getElementById('fDate').value;
+  const a=document.getElementById('fArea').value;
+  const t=document.getElementById('fTrap').value;
+  const m=document.getElementById('fMosq').value;
+  return data.filter(r => (!d || r.date.startsWith(d)) && (!a || r.area===a) && (!t || r.trap===t) && (!m || r.mosquito_name===m));
+}
+
+function renderTable(rows) {
+  const tb=document.getElementById('tb'); tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.date}</td><td>${r.area}</td><td>${r.trap}</td><td>${r.mosquito_name}</td><td>${r.number_of_mosquitoes}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+let chart;
+function renderChart(rows) {
+  const by={}; rows.forEach(r=>by[r.area]=(by[r.area]||0)+Number(r.number_of_mosquitoes||0));
+  const labels=Object.keys(by), vals=labels.map(k=>by[k]);
+  if(chart) chart.destroy();
+  chart=new Chart(document.getElementById('areaChart'), {
+    type:'bar',
+    data:{labels,datasets:[{label:'Mosquito by area',data:vals}]},
+    options:{responsive:true,plugins:{legend:{display:false}}}
+  });
+}
+
+function renderKpi(rows) {
+  document.getElementById('kpiTotal').textContent = rows.reduce((s,r)=>s+Number(r.number_of_mosquitoes||0),0);
+  document.getElementById('kpiRecords').textContent = rows.length;
+  document.getElementById('kpiAreas').textContent = new Set(rows.map(r=>r.area)).size;
+  document.getElementById('kpiTraps').textContent = new Set(rows.map(r=>r.trap)).size;
+}
+
+function rerender(){ const r=filtered(); renderKpi(r); renderTable(r); renderChart(r); }
+['fDate','fArea','fTrap','fMosq'].forEach(id=>document.getElementById(id).addEventListener('change', rerender));
+rerender();
+</script>
+</body>
+</html>

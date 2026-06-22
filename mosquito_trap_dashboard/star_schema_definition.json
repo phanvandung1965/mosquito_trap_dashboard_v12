@@ -1,0 +1,61 @@
+{
+  "model": "mosquito_trap_star_schema",
+  "version": "1.0.0",
+  "description": "Star schema for mosquito trap monitoring dashboard",
+  "dimensions": [
+    {
+      "name": "dim_date",
+      "grain": "one row per calendar date",
+      "primary_key": "DateKey",
+      "columns": ["DateKey", "Date", "Year", "Quarter", "Month", "MonthName", "WeekOfYear", "Day", "DayOfWeek"]
+    },
+    {
+      "name": "dim_area",
+      "grain": "one row per area",
+      "primary_key": "AreaKey",
+      "columns": ["AreaKey", "area_id", "area_name", "district", "ward", "latitude", "longitude", "risk_level"]
+    },
+    {
+      "name": "dim_trap",
+      "grain": "one row per trap",
+      "primary_key": "TrapKey",
+      "columns": ["TrapKey", "trap_id", "trap_code", "AreaKey", "install_date", "trap_type", "current_status", "last_maintenance_at", "battery_level"]
+    },
+    {
+      "name": "dim_status",
+      "grain": "one row per status",
+      "primary_key": "StatusKey",
+      "columns": ["StatusKey", "status_name"]
+    }
+  ],
+  "facts": [
+    {
+      "name": "fact_observation",
+      "grain": "one row per trap observation timestamp",
+      "columns": ["ObservationKey", "DateKey", "AreaKey", "TrapKey", "observed_at", "mosquito_count", "species", "temperature_c", "humidity_pct", "rainfall_mm"]
+    },
+    {
+      "name": "fact_trap_health",
+      "grain": "one row per trap health snapshot",
+      "columns": ["HealthKey", "DateKey", "AreaKey", "TrapKey", "StatusKey", "check_time", "battery_level", "signal_strength", "error_code"]
+    },
+    {
+      "name": "fact_alert",
+      "grain": "one row per alert event",
+      "columns": ["AlertKey", "DateKey", "AreaKey", "TrapKey", "alert_time", "alert_type", "severity", "resolved", "resolved_at", "message"]
+    }
+  ],
+  "relationships": [
+    "dim_date.DateKey (1) -> fact_observation.DateKey (N)",
+    "dim_date.DateKey (1) -> fact_trap_health.DateKey (N)",
+    "dim_date.DateKey (1) -> fact_alert.DateKey (N)",
+    "dim_area.AreaKey (1) -> fact_observation.AreaKey (N)",
+    "dim_area.AreaKey (1) -> fact_trap_health.AreaKey (N)",
+    "dim_area.AreaKey (1) -> fact_alert.AreaKey (N)",
+    "dim_trap.TrapKey (1) -> fact_observation.TrapKey (N)",
+    "dim_trap.TrapKey (1) -> fact_trap_health.TrapKey (N)",
+    "dim_trap.TrapKey (1) -> fact_alert.TrapKey (N)",
+    "dim_status.StatusKey (1) -> fact_trap_health.StatusKey (N)"
+  ],
+  "filter_direction": "single_dimension_to_fact"
+}

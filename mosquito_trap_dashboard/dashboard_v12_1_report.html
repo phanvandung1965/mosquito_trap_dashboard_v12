@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Mosquito Trap Dashboard V12.1 - Trap Samples Report</title>
+  <style>
+    :root{
+      --paper:#ffffff;
+      --ink:#111827;
+      --muted:#6b7280;
+      --line:#1f2937;
+      --soft:#e5e7eb;
+      --head:#f3f4f6;
+      --accent:#0f172a;
+      --toolbar:#f8fafc;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;padding:18px;background:#eef2f7;color:var(--ink);font-family:Arial,"Helvetica Neue",sans-serif}
+    .wrap{max-width:1480px;margin:0 auto}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{appearance:none;border:1px solid #cbd5e1;background:#fff;color:#111827;border-radius:10px;padding:9px 14px;font-weight:700;text-decoration:none;cursor:pointer}
+    .btn.primary{background:#0f172a;border-color:#0f172a;color:#fff}
+
+    .paper{background:var(--paper);border:1px solid #cfd8e3;box-shadow:0 18px 40px rgba(15,23,42,.08);padding:18px}
+    .report-head{border:2px solid var(--line);margin-bottom:14px}
+    .report-head-top{display:grid;grid-template-columns:220px 1fr 220px;min-height:92px}
+    .logoBox,.codeBox{border-right:1px solid var(--line);display:flex;align-items:center;justify-content:center;padding:12px}
+    .codeBox{border-right:none;border-left:1px solid var(--line);text-align:center;flex-direction:column;gap:4px}
+    .logoMark{width:72px;height:72px;border:2px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700}
+    .titleBox{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px 16px;text-align:center}
+    .titleBox h1{margin:0;font-size:24px;letter-spacing:.03em;text-transform:uppercase}
+    .titleBox .sub{margin-top:6px;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .titleBox .sub2{margin-top:4px;font-size:12px;color:#374151}
+    .codeLabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    .codeValue{font-size:18px;font-weight:800}
+    .report-head-bottom{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line)}
+    .metaCell{padding:10px 12px;border-right:1px solid var(--line);min-height:62px}
+    .metaCell:last-child{border-right:none}
+    .metaLabel{font-size:11px;font-weight:700;text-transform:uppercase;color:#4b5563;letter-spacing:.06em}
+    .metaValue{margin-top:6px;font-size:15px;font-weight:700;word-break:break-word}
+
+    .sectionTitle{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:12px 0 8px}
+    .sectionTitle h2{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.05em}
+    .sectionTitle .hint{font-size:12px;color:var(--muted)}
+
+    .tableWrap{overflow:auto;border:2px solid var(--line)}
+    table{width:100%;border-collapse:collapse;background:#fff;font-size:12px}
+    thead th{background:var(--head);border:1px solid var(--line);padding:8px 6px;text-align:center;vertical-align:middle;font-weight:800}
+    tbody td{border:1px solid var(--line);padding:7px 6px;vertical-align:top;line-height:1.35}
+    tbody tr:nth-child(even){background:#fcfcfd}
+    .center{text-align:center}
+    .right{text-align:right}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px}
+    .small{font-size:11px;color:#4b5563}
+
+    .notes{display:grid;grid-template-columns:1.4fr .8fr;gap:12px;margin-top:12px}
+    .noteBox{border:2px solid var(--line);min-height:92px;padding:10px 12px}
+    .noteTitle{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;color:#4b5563}
+    .sigGrid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--line)}
+    .sigCell{min-height:108px;padding:10px 12px;border-right:1px solid var(--line)}
+    .sigCell:last-child{border-right:none}
+    .sigTitle{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#4b5563;margin-bottom:10px}
+
+    .foot{margin-top:10px;font-size:11px;color:#6b7280;text-align:right}
+
+    @media (max-width:1100px){
+      .report-head-top{grid-template-columns:1fr}
+      .logoBox,.titleBox,.codeBox{border:none;border-bottom:1px solid var(--line)}
+      .report-head-bottom{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .metaCell:nth-child(2){border-right:none}
+      .metaCell:nth-child(-n+2){border-bottom:1px solid var(--line)}
+      .notes{grid-template-columns:1fr}
+    }
+
+    @media print{
+      @page{size:A4 landscape;margin:10mm}
+      body{background:#fff;padding:0}
+      .toolbar{display:none}
+      .wrap{max-width:none}
+      .paper{box-shadow:none;border:none;padding:0}
+      .tableWrap{overflow:visible}
+      table{font-size:10.5px}
+      thead th,tbody td{padding:5px 4px}
+      .foot{margin-top:6px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="badge">🦟 Mosquito Trap Samples · V12.1</div>
+      <div class="actions">
+        <button class="btn primary" onclick="window.print()">🖨️ In / Xuất PDF</button>
+        <a class="btn" href="/">↩ Dashboard</a>
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="report-head">
+        <div class="report-head-top">
+          <div class="logoBox">
+            <div class="logoMark">🦟</div>
+          </div>
+          <div class="titleBox">
+            <h1>Trap Samples Report</h1>
+            <div class="sub">Mosquito Trap Dashboard V12.1</div>
+            <div class="sub2">Biểu mẫu tổng hợp mẫu bẫy theo định dạng in ấn</div>
+          </div>
+          <div class="codeBox">
+            <div class="codeLabel">Report Code</div>
+            <div class="codeValue">TSR-V12.1</div>
+            <div class="small">Printable layout</div>
+          </div>
+        </div>
+        <div class="report-head-bottom">
+          <div class="metaCell">
+            <div class="metaLabel">Version</div>
+            <div class="metaValue" id="mVersion">-</div>
+          </div>
+          <div class="metaCell">
+            <div class="metaLabel">Total Rows</div>
+            <div class="metaValue" id="mRows">-</div>
+          </div>
+          <div class="metaCell">
+            <div class="metaLabel">Source Database</div>
+            <div class="metaValue" id="mDb">-</div>
+          </div>
+          <div class="metaCell">
+            <div class="metaLabel">Generated At</div>
+            <div class="metaValue" id="mTime">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sectionTitle">
+        <h2>Trap Sample Listing</h2>
+        <div class="hint">Cột bám theo mẫu: No · Suburb · Site · Location · Coords · Date Set · Date Collected · Sample Type · Sample Collected · Notes</div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:50px">No</th>
+              <th style="width:120px">Suburb</th>
+              <th style="width:90px">Site</th>
+              <th style="width:300px">Location</th>
+              <th style="width:150px">Coords</th>
+              <th style="width:95px">Date Set</th>
+              <th style="width:105px">Date Collected</th>
+              <th style="width:110px">Sample Type</th>
+              <th style="width:120px">Sample Collected</th>
+              <th style="width:170px">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"><tr><td colspan="10" class="center">Đang tải dữ liệu...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="notes">
+        <div class="noteBox">
+          <div class="noteTitle">Ghi chú biểu mẫu</div>
+          <div class="small">
+            Báo cáo này đang map từ dữ liệu dashboard hiện có sang form trap samples để tiện in, rà soát và xuất PDF.
+            Các cột chưa có dữ liệu nguồn trực tiếp sẽ để trống để người dùng điền tay hoặc bổ sung ở bước import chuẩn hoá sau.
+          </div>
+        </div>
+        <div class="sigGrid">
+          <div class="sigCell">
+            <div class="sigTitle">Prepared By</div>
+          </div>
+          <div class="sigCell">
+            <div class="sigTitle">Reviewed By</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot" id="foot">Generated by Mosquito Trap Dashboard V12.1</div>
+    </div>
+  </div>
+
+<script>
+const API = '/api/v12';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+function fmtDate(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(Number.isNaN(d.getTime())) return esc(v);
+  return d.toLocaleDateString('en-AU');
+}
+
+async function j(url){
+  const r = await fetch(url, {cache:'no-store'});
+  if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+function textOrBlank(v){
+  return v == null || v === '' ? '' : esc(v);
+}
+
+async function load(){
+  const tbody = document.getElementById('tbody');
+  try{
+    const [meta, table] = await Promise.all([
+      j(`${API}/meta/info`),
+      j(`${API}/table?limit=250&sort=date&order=desc`)
+    ]);
+
+    document.getElementById('mVersion').textContent = `V${meta.version || '12.1'}`;
+    document.getElementById('mRows').textContent = (meta.total_rows ?? 0).toLocaleString('en-US');
+    document.getElementById('mDb').textContent = (meta.database || '-').split('/').slice(-2).join('/');
+    document.getElementById('mTime').textContent = new Date().toLocaleString('en-AU');
+
+    const rows = (table && table.data) ? table.data : [];
+    if(!rows.length){
+      tbody.innerHTML = '<tr><td colspan="10" class="center">Không có dữ liệu</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    rows.forEach((r, i) => {
+      const coords = (r.latitude && r.longitude) ? `${r.latitude}, ${r.longitude}` : '';
+      const suburb = r.city || r.state || r.area_name || '';
+      const site = r.sitecode_cd || r.trap_id || '';
+      const location = r.location_name || r.address || r.area_name || '';
+      const dateSet = fmtDate(r.date);
+      const notes = [r.species_name, r.count_total ? `Count: ${r.count_total}` : ''].filter(Boolean).join(' · ');
+
+      tbody.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td class="center">${i + 1}</td>
+          <td>${textOrBlank(suburb)}</td>
+          <td class="mono">${textOrBlank(site)}</td>
+          <td>${textOrBlank(location)}</td>
+          <td class="mono">${textOrBlank(coords)}</td>
+          <td class="center">${dateSet}</td>
+          <td></td>
+          <td>${textOrBlank(r.sample_type || '')}</td>
+          <td>${textOrBlank(r.sample_collected || '')}</td>
+          <td>${textOrBlank(notes)}</td>
+        </tr>
+      `);
+    });
+
+    document.getElementById('foot').textContent = `Generated at ${new Date().toLocaleString('en-AU')} · ${rows.length} rows shown · Printable Trap Samples layout`;
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="10" class="center">Lỗi tải dữ liệu: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+window.addEventListener('load', load);
+</script>
+</body>
+</html>

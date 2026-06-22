@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mosquito Trap Dashboard V7</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    body { font-family: Arial,sans-serif; margin: 16px; background:#f6f8fc; color:#1f2937; }
+    .top { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .badge { background:#ecfdf3; color:#027a48; border:1px solid #a6f4c5; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:14px 0; }
+    .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    .card { background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .label { font-size:12px; color:#6b7280; }
+    .val { font-size:24px; font-weight:700; }
+    .filters { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+    select,input { width:100%; padding:8px; border:1px solid #d1d5db; border-radius:8px; background:#fff; }
+    .actions { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+    button { border:1px solid #d1d5db; background:#fff; padding:8px 10px; border-radius:8px; cursor:pointer; }
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; }
+    th,td { border-bottom:1px solid #eef2f7; padding:8px; text-align:left; font-size:14px; }
+    th { background:#f3f6fb; position:sticky; top:0; cursor:pointer; }
+    .small { font-size:12px; color:#6b7280; }
+    @media (max-width: 900px) { .grid,.filters,.charts-grid { grid-template-columns:1fr 1fr; } }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns:1fr; } }
+    @media (max-width: 600px) { .grid,.filters { grid-template-columns:1fr; } .val { font-size:20px; } }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h2 style="margin:0">Mosquito Trap Dashboard V7</h2>
+    <div>
+      <span class="badge">đang thực hiện</span>
+      <span class="small" id="lastUpdated"></span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Tổng muỗi</div><div class="val" id="kTotal"></div></div>
+    <div class="card"><div class="label">Số bản ghi</div><div class="val" id="kRows"></div></div>
+    <div class="card"><div class="label">Số khu vực</div><div class="val" id="kAreas"></div></div>
+    <div class="card"><div class="label">Số bẫy</div><div class="val" id="kTraps"></div></div>
+  </div>
+
+  <div class="filters">
+    <select id="fDate"><option value="">Tất cả date</option></select>
+    <select id="fArea"><option value="">Tất cả area</option></select>
+    <select id="fTrap"><option value="">Tất cả trap</option></select>
+    <select id="fMosq"><option value="">Tất cả mosquito_name</option></select>
+  </div>
+
+  <div class="actions">
+    <input id="q" placeholder="Tìm nhanh area/trap/mosquito..." />
+    <button onclick="resetFilters()">Reset filter</button>
+    <button onclick="downloadFilteredCSV()">Tải CSV đã lọc</button>
+  </div>
+  
+  <div class="charts-grid">
+    <div class="card"><canvas id="cLine" height="150"></canvas></div>
+    <div class="card"><canvas id="cBar" height="150"></canvas></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th onclick="setSort('date')">date</th>
+        <th onclick="setSort('area')">area</th>
+        <th onclick="setSort('trap')">trap</th>
+        <th onclick="setSort('mosquito_name')">mosquito_name</th>
+        <th onclick="setSort('number_of_mosquitoes')">number_of_mosquitoes</th>
+      </tr>
+    </thead>
+    <tbody id="tb"></tbody>
+  </table>
+
+<script>
+let data = [];
+let barChart = null, lineChart = null;
+let sortKey = 'date', sortDir = 'asc';
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').map(l => l.trim().replace(/\r$/, ''));
+  if (lines.length < 2) return [];
+  const header = lines[0].split(',');
+  return lines.slice(1).map(line => {
+    const values = line.split(',');
+    const obj = {};
+    header.forEach((h, i) => {
+      const key = h.trim();
+      const value = values[i] ? values[i].trim() : '';
+      if (key === 'number_of_mosquitoes') {
+          obj[key] = parseInt(value, 10) || 0;
+      } else {
+          obj[key] = value;
+      }
+    });
+    return obj;
+  });
+}
+
+async function main() {
+  try {
+    const response = await fetch('tracking_view.csv');
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+    data = parseCSV(csvText);
+    
+    fill('fDate', uniq(data.map(x=>x.date.slice(0,10))));
+    fill('fArea', uniq(data.map(x=>x.area)));
+    fill('fTrap', uniq(data.map(x=>x.trap)));
+    fill('fMosq', uniq(data.map(x=>x.mosquito_name)));
+
+    document.getElementById('lastUpdated').textContent = 'Cập nhật: ' + new Date().toLocaleString('vi-VN');
+    
+    render();
+  } catch(e) {
+    console.error("Failed to load or parse data:", e);
+    document.body.innerHTML = `<div style="text-align:center;padding:40px;"><h2>Lỗi tải dữ liệu</h2><p>Không thể tải file <code>tracking_view.csv</code>. Hãy chắc chắn file tồn tại và có thể truy cập.</p><pre>${e.message}</pre></div>`;
+  }
+}
+
+function uniq(vals) { return [...new Set(vals.filter(Boolean))].sort(); }
+function fill(id, vals) {
+  const el=document.getElementById(id);
+  vals.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+}
+
+function getFiltered() {
+  const d=document.getElementById('fDate').value;
+  const a=document.getElementById('fArea').value;
+  const t=document.getElementById('fTrap').value;
+  const m=document.getElementById('fMosq').value;
+  const q=(document.getElementById('q').value||'').toLowerCase().trim();
+  let out = data.filter(r => (!d || r.date.startsWith(d)) && (!a || r.area===a) && (!t || r.trap===t) && (!m || r.mosquito_name===m));
+  if(q) out = out.filter(r => [r.area,r.trap,r.mosquito_name,r.date].join(' ').toLowerCase().includes(q));
+  return out;
+}
+
+function setSort(k) {
+  if(sortKey===k) sortDir = sortDir==='asc' ? 'desc' : 'asc';
+  else { sortKey=k; sortDir='asc'; }
+  render();
+}
+
+function sortedRows(rows) {
+  const r=[...rows];
+  r.sort((a,b)=>{
+    const x=a[sortKey], y=b[sortKey];
+    const c = (sortKey==='number_of_mosquitoes') ? (Number(x)-Number(y)) : String(x).localeCompare(String(y));
+    return sortDir==='asc' ? c : -c;
+  });
+  return r;
+}
+
+function renderKpi(rows) {
+  document.getElementById('kTotal').textContent = rows.reduce((s,r)=>s+Number(r.number_of_mosquitoes||0),0);
+  document.getElementById('kRows').textContent = rows.length;
+  document.getElementById('kAreas').textContent = new Set(rows.map(r=>r.area)).size;
+  document.getElementById('kTraps').textContent = new Set(rows.map(r=>r.trap)).size;
+}
+
+function renderTable(rows) {
+  const tb=document.getElementById('tb'); tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${r.date}</td><td>${r.area}</td><td>${r.trap}</td><td>${r.mosquito_name}</td><td>${r.number_of_mosquitoes}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderBarChart(rows) {
+  const by={}; rows.forEach(r=>by[r.area]=(by[r.area]||0)+Number(r.number_of_mosquitoes||0));
+  const labels=Object.keys(by), vals=labels.map(k=>by[k]);
+  if(barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('cBar'), {
+    type:'bar',
+    data:{labels,datasets:[{label:'Số muỗi theo khu vực',data:vals, backgroundColor: '#a6f4c5', borderColor: '#027a48', borderWidth: 1 }]},
+    options:{responsive:true,maintainAspectRatio: false,plugins:{legend:{display:false}, title: { display: true, text: 'Tổng số muỗi theo Khu vực' }}}
+  });
+}
+
+function renderLineChart(rows) {
+    const byDate = {};
+    rows.forEach(r => {
+        const day = r.date.slice(0, 10);
+        byDate[day] = (byDate[day] || 0) + Number(r.number_of_mosquitoes || 0);
+    });
+    const sortedDates = Object.keys(byDate).sort();
+    const chartData = sortedDates.map(date => ({ x: date, y: byDate[date] }));
+
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(document.getElementById('cLine'), {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: 'Số muỗi theo ngày',
+                data: chartData,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'day' },
+                    title: { display: true, text: 'Ngày' }
+                },
+                y: {
+                    title: { display: true, text: 'Số lượng muỗi' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Xu hướng số lượng muỗi theo Ngày' }
+            }
+        }
+    });
+}
+
+
+function resetFilters() {
+  ['fDate','fArea','fTrap','fMosq'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('q').value='';
+  sortKey='date'; sortDir='asc';
+  render();
+}
+
+function toCSV(rows) {
+  const cols=['date','area','trap','mosquito_name','number_of_mosquitoes'];
+  const esc = v => '\"'+String(v??'').replaceAll('\"','\"\"')+'\"';
+  return [cols.join(','), ...rows.map(r=>cols.map(c=>esc(r[c])).join(','))].join('\n');
+}
+function downloadFilteredCSV() {
+  const rows = sortedRows(getFiltered());
+  const blob = new Blob([toCSV(rows)], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tracking_view_filtered.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function render() {
+  const fr = getFiltered(); // Get filtered but not sorted for charts
+  renderKpi(fr); 
+  renderTable(sortedRows(fr)); // Pass sorted rows to table
+  renderBarChart(fr);
+  renderLineChart(fr);
+}
+
+['fDate','fArea','fTrap','fMosq','q'].forEach(id=>document.getElementById(id).addEventListener('input', render));
+
+main();
+</script>
+</body>
+</html>

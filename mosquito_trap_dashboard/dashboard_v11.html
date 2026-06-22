@@ -1,0 +1,1248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mosquito Trap Dashboard V11</title>
+  <link rel="stylesheet" href="static/leaflet.css"/>
+  <link rel="stylesheet" href="static/leaflet.markercluster_MarkerCluster.css"/>
+  <link rel="stylesheet" href="static/leaflet.markercluster_MarkerCluster.Default.css"/>
+  <style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#f6f8fc;color:#1f2937;font-size:14px;min-height:100vh}
+a{color:#1d4ed8;text-decoration:none}
+
+/* ===== HEADER ===== */
+.header{background:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px}
+.header h1{font-size:20px;font-weight:700;color:#1f2937}
+.header h1 span{color:#027a48}
+.badge{padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;display:inline-block}
+.badge-ready{background:#ecfdf3;color:#027a48;border:1px solid #a6f4c5}
+.badge-loading{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.badge-error{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
+.small{font-size:11px;color:#6b7280}
+
+/* ===== TAB BAR ===== */
+.tab-bar{display:flex;background:#fff;border-bottom:2px solid #e5e7eb;padding:0 12px;
+  overflow-x:auto;position:sticky;top:0;z-index:100;gap:0}
+.tab-btn{padding:10px 16px;cursor:pointer;border:none;background:transparent;font-size:13px;
+  font-weight:600;color:#6b7280;white-space:nowrap;border-bottom:3px solid transparent;
+  transition:all .15s}
+.tab-btn:hover{color:#1f2937;background:#f9fafb}
+.tab-btn.active{color:#027a48;border-bottom-color:#027a48;background:#ecfdf3}
+
+/* ===== MAIN CONTENT ===== */
+.main{padding:16px;max-width:1400px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ===== CARDS ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.card{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card-label{font-size:12px;color:#6b7280;margin-bottom:4px}
+.card-val{font-size:26px;font-weight:700;color:#1f2937}
+.card-sub{font-size:11px;color:#9ca3af;margin-top:2px}
+.card-green .card-val{color:#027a48}
+.card-blue .card-val{color:#1d4ed8}
+.card-red .card-val{color:#dc2626}
+.card-amber .card-val{color:#d97706}
+
+/* ===== FILTERS ===== */
+.filters-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.filters-bar select,.filters-bar input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;
+  background:#fff;font-size:13px;color:#374151}
+.filters-bar button{padding:8px 14px;border:1px solid #d1d5db;background:#fff;border-radius:8px;
+  cursor:pointer;font-size:13px;font-weight:600;color:#374151;transition:background .15s}
+.filters-bar button:hover{background:#f3f4f6}
+
+/* ===== SECTIONS ===== */
+.section{margin-bottom:16px}
+.section-title{font-size:15px;font-weight:700;margin-bottom:10px;color:#1f2937;display:flex;align-items:center;gap:6px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;padding:8px 10px;text-align:left;font-weight:600;color:#374151;
+  border-bottom:2px solid #e5e7eb;position:sticky;top:0}
+td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#4b5563}
+tr:hover td{background:#f9fafb}
+.pagination{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 14px}
+.pagination button{padding:6px 12px;border:1px solid #d1d5db;background:#fff;border-radius:6px;
+  cursor:pointer;font-size:12px}
+.pagination button:disabled{opacity:.45;cursor:not-allowed}
+
+/* ===== CHART CONTAINERS ===== */
+.chart-box{position:relative;height:300px}
+.chart-box canvas{width:100%!important;height:100%!important}
+
+/* ===== MAP ===== */
+#heatmap{height:450px;border-radius:10px;z-index:1}
+
+/* ===== CALENDAR HEATMAP ===== */
+.cal-grid{display:grid;gap:2px;grid-template-columns:repeat(53,1fr)}
+.cal-cell{width:100%;aspect-ratio:1;border-radius:2px;cursor:pointer;position:relative}
+.cal-cell:hover::after{content:attr(data-tip);position:absolute;bottom:110%;left:50%;transform:translateX(-50%);
+  background:#1f2937;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;white-space:nowrap;z-index:10}
+.cal-row-label{font-size:10px;color:#6b7280;text-align:right;padding-right:4px}
+
+/* ===== RISK BADGES ===== */
+.risk-high{background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:999px;font-weight:600;font-size:11px}
+.risk-medium{background:#fffbeb;color:#d97706;padding:2px 8px;border-radius:999px;font-weight:600;font-size:11px}
+.risk-low{background:#ecfdf3;color:#027a48;padding:2px 8px;border-radius:999px;font-weight:600;font-size:11px}
+
+/* ===== LOADING / ERROR ===== */
+.loading-msg{text-align:center;padding:40px;color:#6b7280;font-size:14px}
+.error-msg{text-align:center;padding:40px;color:#dc2626;font-size:14px}
+
+/* ===== EXEC SUMMARY ===== */
+.exec-brief{background:#ecfdf3;border:1px solid #a6f4c5;border-radius:10px;padding:16px;
+  font-size:14px;line-height:1.6;color:#065f46;margin-bottom:16px}
+.exec-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.exec-kpi{background:#fff;border-radius:10px;padding:20px;text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);border:2px solid #d1fae5}
+.exec-kpi .val{font-size:36px;font-weight:800;color:#027a48}
+.exec-kpi .lbl{font-size:13px;color:#6b7280;margin-top:4px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .kpi-grid,.exec-kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .kpi-grid,.exec-kpi-grid{grid-template-columns:1fr}
+  .tab-btn{padding:8px 10px;font-size:12px}
+  .card-val{font-size:20px}
+  .header h1{font-size:16px}
+}
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <h1>🦟 Mosquito Trap Dashboard <span>V11</span></h1>
+  <div>
+    <span class="badge badge-ready" id="statusBadge">Ready</span>
+    <span class="small" id="lastUpdated"></span>
+  </div>
+</div>
+
+<!-- ===== TAB BAR ===== -->
+<div class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-tab="overview">📊 Overview</button>
+  <button class="tab-btn" data-tab="species">🧬 Species</button>
+  <button class="tab-btn" data-tab="trends">📈 Trends</button>
+  <button class="tab-btn" data-tab="heatmap">🗺️ Heatmap</button>
+  <button class="tab-btn" data-tab="ai">🤖 AI Confidence</button>
+  <button class="tab-btn" data-tab="risk">⚠️ Risk & Alerts</button>
+  <button class="tab-btn" data-tab="traps">🪤 Trap Performance</button>
+  <button class="tab-btn" data-tab="executive">📋 Executive Summary</button>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main">
+
+<!-- ========== TAB 1: OVERVIEW ========== -->
+<div class="tab-panel active" id="panel-overview">
+  <div class="kpi-grid" id="kpiCards">
+    <div class="card card-green"><div class="card-label">Total Catches</div><div class="card-val" id="kpiTotal">—</div><div class="card-sub" id="kpiDateRange"></div></div>
+    <div class="card card-blue"><div class="card-label">Species Count</div><div class="card-val" id="kpiSpecies">—</div></div>
+    <div class="card"><div class="card-label">Active Areas</div><div class="card-val" id="kpiAreas">—</div></div>
+    <div class="card card-amber"><div class="card-label">Avg Confidence</div><div class="card-val" id="kpiConfidence">—</div></div>
+  </div>
+
+  <div class="filters-bar" id="globalFilters">
+    <select id="fArea"><option value="">All Areas</option></select>
+    <select id="fSpecies"><option value="">All Species</option></select>
+    <input type="date" id="fDateFrom" placeholder="From date"/>
+    <input type="date" id="fDateTo" placeholder="To date"/>
+    <button onclick="resetFilters()">↻ Reset</button>
+    <button onclick="applyFilters()">🔍 Apply</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>City</th><th>State</th><th>Species</th><th>Confidence</th><th>AI Model</th><th>Site Code</th></tr>
+      </thead>
+      <tbody id="overviewTbody"></tbody>
+    </table>
+    <div class="pagination">
+      <span class="small" id="overviewPageInfo"></span>
+      <button id="btnPrev" onclick="overviewChangePage(-1)">← Previous</button>
+      <button id="btnNext" onclick="overviewChangePage(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 2: SPECIES ========== -->
+<div class="tab-panel" id="panel-species">
+  <div class="grid-2">
+    <div class="card"><div class="section-title">🍩 Species Breakdown (Top 15)</div><div class="chart-box"><canvas id="chartDonut"></canvas></div></div>
+    <div class="card"><div class="section-title">📊 Species by Genus</div><div class="chart-box"><canvas id="chartGenus"></canvas></div></div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card"><div class="section-title">📊 Species by Area (Stacked)</div><div class="chart-box" style="height:400px"><canvas id="chartSpeciesArea"></canvas></div></div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card">
+      <div class="section-title">📐 Shannon Diversity Index (H') per City</div>
+      <div class="table-wrap">
+        <table id="diversityTable">
+          <thead><tr><th>City</th><th>Total Records</th><th>Species Count</th><th>Shannon H'</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 3: TRENDS ========== -->
+<div class="tab-panel" id="panel-trends">
+  <div class="grid-2">
+    <div class="card"><div class="section-title">📈 Monthly Trend + MA(3)</div><div class="chart-box"><canvas id="chartMonthly"></canvas></div></div>
+    <div class="card"><div class="section-title">🌤️ Seasonal Comparison</div><div class="chart-box"><canvas id="chartSeasonal"></canvas></div></div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card">
+      <div class="section-title">📅 Daily Activity Calendar</div>
+      <div id="calendarHeatmap" style="overflow-x:auto;padding:8px"></div>
+    </div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card">
+      <div class="section-title">🚨 Anomaly Detection (z-score &gt; 2)</div>
+      <div class="table-wrap">
+        <table id="anomalyTable">
+          <thead><tr><th>Date</th><th>Count</th><th>Mean</th><th>Std Dev</th><th>Z-Score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 4: HEATMAP ========== -->
+<div class="tab-panel" id="panel-heatmap">
+  <div class="filters-bar" style="margin-bottom:12px">
+    <select id="heatmapSpeciesFilter"><option value="">All Species</option></select>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;border-radius:10px">
+    <div id="heatmap"></div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card">
+      <div class="section-title">📍 Density by Area</div>
+      <div class="table-wrap">
+        <table id="densityTable">
+          <thead><tr><th>City</th><th>State</th><th>Records</th><th>Species</th><th>Center Lat</th><th>Center Lng</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 5: AI CONFIDENCE ========== -->
+<div class="tab-panel" id="panel-ai">
+  <div class="grid-2">
+    <div class="card"><div class="section-title">📊 Confidence Distribution</div><div class="chart-box"><canvas id="chartConfDist"></canvas></div></div>
+    <div class="card"><div class="section-title">🤖 Model Comparison (Avg/Min/Max)</div><div class="chart-box"><canvas id="chartModelComp"></canvas></div></div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card">
+      <div class="section-title">🦟 Confidence by Species</div>
+      <div class="table-wrap">
+        <table id="confSpeciesTable">
+          <thead><tr><th>Species</th><th>Records</th><th>Avg Conf</th><th>Min Conf</th><th>Max Conf</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card"><div class="section-title">📈 Model Version Timeline</div><div class="chart-box" style="height:350px"><canvas id="chartModelTimeline"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ========== TAB 6: RISK & ALERTS ========== -->
+<div class="tab-panel" id="panel-risk">
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-title">⚠️ Risk Scores by Area</div>
+      <div class="table-wrap" style="max-height:400px;overflow-y:auto">
+        <table id="riskTable">
+          <thead><tr><th>City</th><th>Density (30d)</th><th>Recent 7d</th><th>Week Ratio</th><th>Vectors</th><th>Risk Score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">📡 Spike Detection</div>
+      <div class="table-wrap" style="max-height:400px;overflow-y:auto">
+        <table id="spikeTable">
+          <thead><tr><th>Date</th><th>Count</th><th>Rolling Avg</th><th>Z-Score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card">
+      <div class="section-title">🦠 Vector Species Summary</div>
+      <div class="table-wrap">
+        <table id="vectorTable">
+          <thead><tr><th>Species</th><th>City</th><th>Count</th><th>Avg Conf</th><th>First Seen</th><th>Last Seen</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="section" style="margin-top:12px">
+    <div class="card"><div class="section-title">🌡️ Temperature vs Mosquito Count</div><div class="chart-box"><canvas id="chartWeatherCorr"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ========== TAB 7: TRAP PERFORMANCE ========== -->
+<div class="tab-panel" id="panel-traps">
+  <div class="card" style="margin-bottom:12px"><div class="section-title">🏆 Top 20 Areas by Record Count</div><div class="chart-box" style="height:400px"><canvas id="chartTrapBar"></canvas></div></div>
+  <div class="card">
+    <div class="section-title">📋 Area Activity Summary</div>
+    <div class="table-wrap">
+      <table id="trapTable">
+        <thead><tr><th>City</th><th>State</th><th>Records</th><th>Species</th><th>Center Lat</th><th>Center Lng</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 8: EXECUTIVE SUMMARY ========== -->
+<div class="tab-panel" id="panel-executive">
+  <div class="exec-kpi-grid" id="execKpiGrid">
+    <div class="exec-kpi"><div class="val" id="execTotal">—</div><div class="lbl">Total Records</div></div>
+    <div class="exec-kpi"><div class="val" id="execSpecies">—</div><div class="lbl">Species Identified</div></div>
+    <div class="exec-kpi"><div class="val" id="execAreas">—</div><div class="lbl">Active Areas</div></div>
+    <div class="exec-kpi"><div class="val" id="execConf">—</div><div class="lbl">Avg AI Confidence</div></div>
+  </div>
+  <div class="exec-brief" id="execBrief">Loading executive summary...</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-title">🔴 Top 5 High-Risk Areas</div>
+      <div class="table-wrap">
+        <table id="execRiskTable">
+          <thead><tr><th>City</th><th>Density</th><th>Vectors</th><th>Risk Score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">🦟 Top 5 Most Common Species</div>
+      <div class="table-wrap">
+        <table id="execSpeciesTable">
+          <thead><tr><th>Species</th><th>Count</th><th>%</th><th>Avg Conf</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<!-- ===== SCRIPTS ===== -->
+<script src="static/chart.js"></script>
+<script src="static/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="static/leaflet.js"></script>
+<script src="static/leaflet.markercluster.js"></script>
+<script src="static/leaflet-heat.js"></script>
+<script>
+/* ==========================================================================
+   Mosquito Trap Dashboard V11 — Frontend Logic
+   ========================================================================== */
+
+// ---------- STATE ----------
+const API = '/api/v11';
+let overviewPage = 1;
+const PAGE_LIMIT = 50;
+let overviewTotalPages = 1;
+
+// Global filters state
+let gFilters = { area: '', species: '', date_from: '', date_to: '' };
+
+// Chart instances (for destroy before re-render)
+const charts = {};
+
+// Leaflet heatmap
+let heatmapMap = null;
+let heatLayer = null;
+
+// Track which tabs have been loaded
+const tabLoaded = {};
+
+// ---------- UTILITY ----------
+function setStatus(text, type) {
+  const b = document.getElementById('statusBadge');
+  b.textContent = text;
+  b.className = 'badge badge-' + (type || 'ready');
+}
+
+function qs(obj) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(obj)) { if (v) p.append(k, v); }
+  return p.toString();
+}
+
+function filterQS() { return qs(gFilters); }
+
+async function apiFetch(path, extraParams) {
+  const base = filterQS();
+  const extra = extraParams ? qs(extraParams) : '';
+  const sep1 = path.includes('?') ? '&' : '?';
+  let url = `${API}${path}`;
+  if (base) url += sep1 + base;
+  if (extra) url += (base ? '&' : sep1) + extra;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); charts[id] = null; }
+}
+
+function fmtNum(n) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString('en-AU');
+}
+
+function riskBadge(score) {
+  if (score >= 0.6) return `<span class="risk-high">${score}</span>`;
+  if (score >= 0.3) return `<span class="risk-medium">${score}</span>`;
+  return `<span class="risk-low">${score}</span>`;
+}
+
+// Color palette for charts
+const COLORS = [
+  '#027a48','#1d4ed8','#dc2626','#d97706','#7c3aed','#0891b2','#be185d',
+  '#4d7c0f','#a21caf','#0369a1','#b45309','#6d28d9','#059669','#e11d48',
+  '#0284c7','#ca8a04','#7c2d12','#4338ca','#15803d','#9333ea'
+];
+
+// ---------- TAB NAVIGATION ----------
+document.getElementById('tabBar').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  const tab = btn.dataset.tab;
+  // Update buttons
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Update panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  // Lazy load
+  loadTab(tab);
+});
+
+function loadTab(tab) {
+  if (tabLoaded[tab]) return;
+  tabLoaded[tab] = true;
+  switch (tab) {
+    case 'overview': loadOverview(); break;
+    case 'species': loadSpeciesTab(); break;
+    case 'trends': loadTrendsTab(); break;
+    case 'heatmap': loadHeatmapTab(); break;
+    case 'ai': loadAITab(); break;
+    case 'risk': loadRiskTab(); break;
+    case 'traps': loadTrapsTab(); break;
+    case 'executive': loadExecutiveTab(); break;
+  }
+}
+
+function invalidateAllTabs() {
+  for (const k of Object.keys(tabLoaded)) tabLoaded[k] = false;
+}
+
+// ---------- FILTERS ----------
+async function loadFiltersDropdowns() {
+  try {
+    const [areas, species] = await Promise.all([
+      apiFetch('/filters/areas'),
+      apiFetch('/filters/species')
+    ]);
+    const fArea = document.getElementById('fArea');
+    areas.forEach(a => {
+      const o = document.createElement('option');
+      o.value = a.value; o.textContent = a.label + ' (' + a.count + ')';
+      fArea.appendChild(o);
+    });
+    const fSpecies = document.getElementById('fSpecies');
+    species.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.value; o.textContent = s.label + ' (' + s.count + ')';
+      fSpecies.appendChild(o);
+    });
+    // Also populate heatmap species filter
+    const hf = document.getElementById('heatmapSpeciesFilter');
+    species.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.value; o.textContent = s.label;
+      hf.appendChild(o);
+    });
+  } catch (e) { console.error('Error loading filters', e); }
+}
+
+function readFilters() {
+  gFilters.area = document.getElementById('fArea').value;
+  gFilters.species = document.getElementById('fSpecies').value;
+  gFilters.date_from = document.getElementById('fDateFrom').value;
+  gFilters.date_to = document.getElementById('fDateTo').value;
+}
+
+function applyFilters() {
+  readFilters();
+  overviewPage = 1;
+  invalidateAllTabs();
+  const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'overview';
+  loadTab(activeTab);
+}
+
+function resetFilters() {
+  document.getElementById('fArea').value = '';
+  document.getElementById('fSpecies').value = '';
+  document.getElementById('fDateFrom').value = '';
+  document.getElementById('fDateTo').value = '';
+  gFilters = { area: '', species: '', date_from: '', date_to: '' };
+  overviewPage = 1;
+  invalidateAllTabs();
+  loadTab('overview');
+}
+
+// ---------- TAB 1: OVERVIEW ----------
+async function loadOverview() {
+  setStatus('Loading...', 'loading');
+  try {
+    await Promise.all([loadKPI(), loadOverviewTable()]);
+    setStatus('Ready', 'ready');
+    document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleString('en-AU');
+  } catch (e) {
+    setStatus('Error', 'error');
+    console.error(e);
+  }
+}
+
+async function loadKPI() {
+  try {
+    const d = await apiFetch('/kpi');
+    document.getElementById('kpiTotal').textContent = fmtNum(d.total_records);
+    document.getElementById('kpiSpecies').textContent = fmtNum(d.total_species);
+    document.getElementById('kpiAreas').textContent = fmtNum(d.total_areas);
+    document.getElementById('kpiConfidence').textContent = d.avg_confidence != null ? d.avg_confidence.toFixed(3) : '—';
+    document.getElementById('kpiDateRange').textContent = d.date_from && d.date_to ? `${d.date_from} → ${d.date_to}` : '';
+  } catch (e) {
+    document.getElementById('kpiTotal').textContent = 'Error';
+    console.error('KPI error', e);
+  }
+}
+
+async function loadOverviewTable() {
+  const tbody = document.getElementById('overviewTbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading-msg">Loading...</td></tr>';
+  try {
+    const d = await apiFetch(`/table?page=${overviewPage}&limit=${PAGE_LIMIT}`);
+    tbody.innerHTML = '';
+    if (!d.data || d.data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="loading-msg">No data found</td></tr>';
+    } else {
+      d.data.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.date||'-'}</td><td>${r.city||'-'}</td><td>${r.state||'-'}</td>
+          <td>${r.detected_name||'-'}</td><td>${r.confidence||'-'}</td>
+          <td>${r.aimodel||'-'}</td><td>${r.sitecode_cd||'-'}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    overviewTotalPages = d.pagination.total_pages;
+    document.getElementById('overviewPageInfo').textContent =
+      `Page ${d.pagination.page} of ${d.pagination.total_pages} (${fmtNum(d.pagination.total_records)} records)`;
+    document.getElementById('btnPrev').disabled = overviewPage <= 1;
+    document.getElementById('btnNext').disabled = overviewPage >= overviewTotalPages;
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="7" class="error-msg">Error loading data</td></tr>';
+    console.error(e);
+  }
+}
+
+function overviewChangePage(delta) {
+  const np = overviewPage + delta;
+  if (np >= 1 && np <= overviewTotalPages) {
+    overviewPage = np;
+    loadOverviewTable();
+  }
+}
+
+// ---------- TAB 2: SPECIES ----------
+async function loadSpeciesTab() {
+  setStatus('Loading...', 'loading');
+  try {
+    await Promise.all([loadDonutChart(), loadGenusChart(), loadSpeciesAreaChart(), loadDiversityTable()]);
+    setStatus('Ready', 'ready');
+  } catch (e) { setStatus('Error', 'error'); console.error(e); }
+}
+
+async function loadDonutChart() {
+  try {
+    const data = await apiFetch('/species/breakdown');
+    const labels = data.map(d => d.detected_name);
+    const vals = data.map(d => d.count);
+    destroyChart('donut');
+    charts.donut = new Chart(document.getElementById('chartDonut'), {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data: vals, backgroundColor: COLORS.slice(0, labels.length), borderWidth: 1 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const i = ctx.dataIndex;
+                return `${labels[i]}: ${fmtNum(vals[i])} (${data[i].pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  } catch (e) { console.error('Donut error', e); }
+}
+
+async function loadGenusChart() {
+  try {
+    const data = await apiFetch('/species/genus');
+    const labels = data.map(d => d.genus);
+    const vals = data.map(d => d.count);
+    destroyChart('genus');
+    charts.genus = new Chart(document.getElementById('chartGenus'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Count', data: vals,
+          backgroundColor: COLORS.slice(0, labels.length), borderWidth: 0, borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+  } catch (e) { console.error('Genus error', e); }
+}
+
+async function loadSpeciesAreaChart() {
+  try {
+    const data = await apiFetch('/species/by-area');
+    // Build pivot: cities as labels, species as datasets
+    const cities = [...new Set(data.map(d => d.city))];
+    const speciesSet = [...new Set(data.map(d => d.detected_name))];
+    const lookup = {};
+    data.forEach(d => { lookup[d.city + '|' + d.detected_name] = d.count; });
+
+    const datasets = speciesSet.map((sp, i) => ({
+      label: sp,
+      data: cities.map(c => lookup[c + '|' + sp] || 0),
+      backgroundColor: COLORS[i % COLORS.length],
+      borderWidth: 0
+    }));
+
+    destroyChart('speciesArea');
+    charts.speciesArea = new Chart(document.getElementById('chartSpeciesArea'), {
+      type: 'bar',
+      data: { labels: cities, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+        scales: { x: { stacked: true, ticks: { maxRotation: 45, font: { size: 10 } } }, y: { stacked: true, beginAtZero: true } }
+      }
+    });
+  } catch (e) { console.error('Species by area error', e); }
+}
+
+async function loadDiversityTable() {
+  try {
+    const data = await apiFetch('/species/diversity');
+    const tbody = document.querySelector('#diversityTable tbody');
+    tbody.innerHTML = '';
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.city}</td><td>${fmtNum(r.total)}</td><td>${r.species_count}</td><td>${r.shannon_h.toFixed(4)}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.querySelector('#diversityTable tbody').innerHTML = '<tr><td colspan="4" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+// ---------- TAB 3: TRENDS ----------
+async function loadTrendsTab() {
+  setStatus('Loading...', 'loading');
+  try {
+    await Promise.all([loadMonthlyChart(), loadSeasonalChart(), loadCalendarHeatmap(), loadAnomalyTable()]);
+    setStatus('Ready', 'ready');
+  } catch (e) { setStatus('Error', 'error'); console.error(e); }
+}
+
+async function loadMonthlyChart() {
+  try {
+    const data = await apiFetch('/trends/monthly');
+    const labels = data.map(d => d.ym);
+    const counts = data.map(d => d.cnt);
+    const ma3 = data.map(d => d.ma3 != null ? Math.round(d.ma3 * 10) / 10 : null);
+    destroyChart('monthly');
+    charts.monthly = new Chart(document.getElementById('chartMonthly'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Monthly Count', data: counts, borderColor: '#027a48', backgroundColor: 'rgba(2,122,72,0.1)', fill: true, tension: 0.3, pointRadius: 4 },
+          { label: 'MA(3)', data: ma3, borderColor: '#d97706', borderDash: [6, 3], tension: 0.3, pointRadius: 0, fill: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: { x: { ticks: { maxRotation: 45, font: { size: 10 } } }, y: { beginAtZero: true } }
+      }
+    });
+  } catch (e) { console.error('Monthly chart error', e); }
+}
+
+async function loadSeasonalChart() {
+  try {
+    const data = await apiFetch('/trends/seasonal');
+    const labels = data.map(d => d.season);
+    const counts = data.map(d => d.count);
+    const bgColors = ['#dc2626', '#d97706', '#1d4ed8', '#027a48'];
+    destroyChart('seasonal');
+    charts.seasonal = new Chart(document.getElementById('chartSeasonal'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Records', data: counts,
+          backgroundColor: bgColors, borderWidth: 0, borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              afterLabel: ctx => {
+                const d = data[ctx.dataIndex];
+                return `Species: ${d.species_count}, Avg Temp: ${d.avg_temp ?? '-'}°C`;
+              }
+            }
+          }
+        },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  } catch (e) { console.error('Seasonal chart error', e); }
+}
+
+async function loadCalendarHeatmap() {
+  const container = document.getElementById('calendarHeatmap');
+  container.innerHTML = '<div class="loading-msg">Loading calendar...</div>';
+  try {
+    const data = await apiFetch('/trends/daily-counts');
+    if (!data || data.length === 0) { container.innerHTML = '<div class="loading-msg">No daily data</div>'; return; }
+
+    // Find min/max
+    const maxCount = Math.max(...data.map(d => d.count));
+    const dateMap = {};
+    data.forEach(d => { dateMap[d.date] = d.count; });
+
+    // Build weeks grid
+    const dates = data.map(d => d.date).sort();
+    const firstDate = new Date(dates[0]);
+    const lastDate = new Date(dates[dates.length - 1]);
+
+    // Start from the Monday of the first week
+    const startDay = new Date(firstDate);
+    startDay.setDate(startDay.getDate() - ((startDay.getDay() + 6) % 7)); // Mon=0
+
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    let html = '<div style="display:flex;gap:2px;align-items:flex-start">';
+    // Day labels
+    html += '<div style="display:flex;flex-direction:column;gap:2px;padding-top:18px">';
+    dayNames.forEach((d, i) => {
+      html += `<div class="cal-row-label" style="height:14px;line-height:14px">${i % 2 === 0 ? d : ''}</div>`;
+    });
+    html += '</div>';
+
+    // Weeks
+    const cur = new Date(startDay);
+    let weekHtml = '';
+    let weekCount = 0;
+    let monthLabels = '';
+    let lastMonth = -1;
+
+    while (cur <= lastDate || cur.getDay() !== 1) {
+      if (cur > lastDate && cur.getDay() === 1) break;
+      const dow = (cur.getDay() + 6) % 7; // Mon=0
+      if (dow === 0) {
+        if (weekHtml) {
+          const m = cur.getMonth();
+          const monthLabel = m !== lastMonth ? cur.toLocaleString('en', { month: 'short' }) : '';
+          lastMonth = m;
+          monthLabels += `<div style="width:14px;text-align:center;font-size:9px;color:#9ca3af;height:16px">${weekCount === 0 || monthLabel ? monthLabel : ''}</div>`;
+          html += `<div style="display:flex;flex-direction:column;gap:2px">${weekHtml}</div>`;
+          weekCount++;
+        }
+        weekHtml = '';
+      }
+      const ds = cur.toISOString().slice(0, 10);
+      const count = dateMap[ds] || 0;
+      const intensity = maxCount > 0 ? count / maxCount : 0;
+      let color;
+      if (count === 0) color = '#ebedf0';
+      else if (intensity < 0.25) color = '#9be9a8';
+      else if (intensity < 0.5) color = '#40c463';
+      else if (intensity < 0.75) color = '#30a14e';
+      else color = '#216e39';
+
+      weekHtml += `<div class="cal-cell" style="width:14px;height:14px;background:${color}" data-tip="${ds}: ${count} records"></div>`;
+      cur.setDate(cur.getDate() + 1);
+    }
+    // Last partial week
+    if (weekHtml) {
+      html += `<div style="display:flex;flex-direction:column;gap:2px">${weekHtml}</div>`;
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="error-msg">Error loading calendar</div>';
+    console.error(e);
+  }
+}
+
+async function loadAnomalyTable() {
+  try {
+    const data = await apiFetch('/trends/anomalies');
+    const tbody = document.querySelector('#anomalyTable tbody');
+    tbody.innerHTML = '';
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="loading-msg">No anomalies detected</td></tr>';
+      return;
+    }
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      const zClass = r.z_score > 3 ? 'risk-high' : 'risk-medium';
+      tr.innerHTML = `<td>${r.date}</td><td>${fmtNum(r.count)}</td><td>${r.mean}</td><td>${r.std_dev}</td>
+        <td><span class="${zClass}">${r.z_score}</span></td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.querySelector('#anomalyTable tbody').innerHTML = '<tr><td colspan="5" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+// ---------- TAB 4: HEATMAP ----------
+async function loadHeatmapTab() {
+  setStatus('Loading...', 'loading');
+  try {
+    await Promise.all([loadHeatmapMap(), loadDensityTable()]);
+    setStatus('Ready', 'ready');
+  } catch (e) { setStatus('Error', 'error'); console.error(e); }
+}
+
+async function loadHeatmapMap(species) {
+  try {
+    const params = {};
+    if (species) params.species = species;
+    const data = await apiFetch('/geo/heatmap', params);
+
+    if (!heatmapMap) {
+      heatmapMap = L.map('heatmap').setView([-25.27, 133.77], 4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap', maxZoom: 18
+      }).addTo(heatmapMap);
+    }
+
+    if (heatLayer) { heatmapMap.removeLayer(heatLayer); heatLayer = null; }
+
+    const points = data.filter(d => d.lat && d.lng).map(d => [d.lat, d.lng, d.intensity]);
+    if (points.length > 0) {
+      heatLayer = L.heatLayer(points, {
+        radius: 25, blur: 15, maxZoom: 12,
+        gradient: { 0.2: '#ffffb2', 0.4: '#fecc5c', 0.6: '#fd8d3c', 0.8: '#f03b20', 1.0: '#bd0026' }
+      }).addTo(heatmapMap);
+
+      // Fit bounds
+      const lats = points.map(p => p[0]);
+      const lngs = points.map(p => p[1]);
+      heatmapMap.fitBounds([
+        [Math.min(...lats), Math.min(...lngs)],
+        [Math.max(...lats), Math.max(...lngs)]
+      ], { padding: [30, 30] });
+    }
+
+    // Invalidate size after render (tab was hidden)
+    setTimeout(() => { if (heatmapMap) heatmapMap.invalidateSize(); }, 200);
+  } catch (e) { console.error('Heatmap error', e); }
+}
+
+// Heatmap species filter
+document.getElementById('heatmapSpeciesFilter').addEventListener('change', function () {
+  const sp = this.value;
+  // Override species filter just for heatmap
+  if (heatLayer && heatmapMap) { heatmapMap.removeLayer(heatLayer); heatLayer = null; }
+  loadHeatmapMap(sp || undefined);
+});
+
+async function loadDensityTable() {
+  try {
+    const data = await apiFetch('/geo/density-by-area');
+    const tbody = document.querySelector('#densityTable tbody');
+    tbody.innerHTML = '';
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.city}</td><td>${r.state||'-'}</td><td>${fmtNum(r.count)}</td>
+        <td>${r.species_count}</td><td>${r.center_lat}</td><td>${r.center_lng}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.querySelector('#densityTable tbody').innerHTML = '<tr><td colspan="6" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+// ---------- TAB 5: AI CONFIDENCE ----------
+async function loadAITab() {
+  setStatus('Loading...', 'loading');
+  try {
+    await Promise.all([loadConfDistChart(), loadModelCompChart(), loadConfSpeciesTable(), loadModelTimelineChart()]);
+    setStatus('Ready', 'ready');
+  } catch (e) { setStatus('Error', 'error'); console.error(e); }
+}
+
+async function loadConfDistChart() {
+  try {
+    const data = await apiFetch('/ai/confidence-dist');
+    const labels = data.map(d => d.bin);
+    const counts = data.map(d => d.count);
+    const bgColors = ['#dc2626', '#d97706', '#eab308', '#22c55e', '#027a48'];
+    destroyChart('confDist');
+    charts.confDist = new Chart(document.getElementById('chartConfDist'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ label: 'Records', data: counts, backgroundColor: bgColors, borderWidth: 0, borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  } catch (e) { console.error('Conf dist error', e); }
+}
+
+async function loadModelCompChart() {
+  try {
+    const data = await apiFetch('/ai/model-comparison');
+    const labels = data.map(d => d.aimodel);
+    destroyChart('modelComp');
+    charts.modelComp = new Chart(document.getElementById('chartModelComp'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Avg', data: data.map(d => d.avg_conf), backgroundColor: '#027a48', borderRadius: 4 },
+          { label: 'Min', data: data.map(d => d.min_conf), backgroundColor: '#dc2626', borderRadius: 4 },
+          { label: 'Max', data: data.map(d => d.max_conf), backgroundColor: '#1d4ed8', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true, max: 1.0 }, x: { ticks: { font: { size: 10 } } } }
+      }
+    });
+  } catch (e) { console.error('Model comp error', e); }
+}
+
+async function loadConfSpeciesTable() {
+  try {
+    const data = await apiFetch('/ai/confidence-by-species');
+    const tbody = document.querySelector('#confSpeciesTable tbody');
+    tbody.innerHTML = '';
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      const confColor = r.avg_conf < 0.5 ? 'color:#dc2626' : r.avg_conf < 0.8 ? 'color:#d97706' : 'color:#027a48';
+      tr.innerHTML = `<td>${r.detected_name}</td><td>${fmtNum(r.records)}</td>
+        <td style="${confColor};font-weight:600">${r.avg_conf}</td><td>${r.min_conf}</td><td>${r.max_conf}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.querySelector('#confSpeciesTable tbody').innerHTML = '<tr><td colspan="5" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+async function loadModelTimelineChart() {
+  try {
+    const data = await apiFetch('/ai/model-timeline');
+    // Group by model
+    const models = [...new Set(data.map(d => d.aimodel))];
+    const months = [...new Set(data.map(d => d.ym))].sort();
+    const lookup = {};
+    data.forEach(d => { lookup[d.aimodel + '|' + d.ym] = d.records; });
+
+    const datasets = models.map((m, i) => ({
+      label: m,
+      data: months.map(ym => lookup[m + '|' + ym] || 0),
+      borderColor: COLORS[i % COLORS.length],
+      backgroundColor: COLORS[i % COLORS.length] + '33',
+      fill: false, tension: 0.3, pointRadius: 3
+    }));
+
+    destroyChart('modelTimeline');
+    charts.modelTimeline = new Chart(document.getElementById('chartModelTimeline'), {
+      type: 'line',
+      data: { labels: months, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+        scales: { x: { ticks: { maxRotation: 45, font: { size: 10 } } }, y: { beginAtZero: true } }
+      }
+    });
+  } catch (e) { console.error('Model timeline error', e); }
+}
+
+// ---------- TAB 6: RISK ----------
+async function loadRiskTab() {
+  setStatus('Loading...', 'loading');
+  try {
+    await Promise.all([loadRiskTable(), loadSpikeTable(), loadVectorTable(), loadWeatherCorrChart()]);
+    setStatus('Ready', 'ready');
+  } catch (e) { setStatus('Error', 'error'); console.error(e); }
+}
+
+async function loadRiskTable() {
+  try {
+    const data = await apiFetch('/risk/scores');
+    const tbody = document.querySelector('#riskTable tbody');
+    tbody.innerHTML = '';
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.city}</td><td>${fmtNum(r.density)}</td><td>${fmtNum(r.recent_7d)}</td>
+        <td>${r.week_ratio}</td><td>${fmtNum(r.vector_count)}</td><td>${riskBadge(r.risk_score)}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.querySelector('#riskTable tbody').innerHTML = '<tr><td colspan="6" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+async function loadSpikeTable() {
+  try {
+    const data = await apiFetch('/risk/spikes');
+    const tbody = document.querySelector('#spikeTable tbody');
+    tbody.innerHTML = '';
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="loading-msg">No spikes detected</td></tr>';
+      return;
+    }
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      const zClass = r.z_score > 3 ? 'risk-high' : 'risk-medium';
+      tr.innerHTML = `<td>${r.date}</td><td>${fmtNum(r.count)}</td><td>${r.rolling_avg}</td>
+        <td><span class="${zClass}">${r.z_score}</span></td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.querySelector('#spikeTable tbody').innerHTML = '<tr><td colspan="4" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+async function loadVectorTable() {
+  try {
+    const data = await apiFetch('/risk/vector-species');
+    const tbody = document.querySelector('#vectorTable tbody');
+    tbody.innerHTML = '';
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="loading-msg">No vector species data</td></tr>';
+      return;
+    }
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><b>${r.detected_name}</b></td><td>${r.city}</td><td>${fmtNum(r.count)}</td>
+        <td>${r.avg_confidence}</td><td>${r.first_seen}</td><td>${r.last_seen}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.querySelector('#vectorTable tbody').innerHTML = '<tr><td colspan="6" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+async function loadWeatherCorrChart() {
+  try {
+    const resp = await apiFetch('/risk/weather-correlation');
+    const data = resp.data || [];
+    const corr = resp.correlations || {};
+
+    // Scatter: temp vs count
+    const points = data.filter(d => d.avg_temp != null).map(d => ({ x: d.avg_temp, y: d.mosquito_count }));
+
+    destroyChart('weatherCorr');
+    charts.weatherCorr = new Chart(document.getElementById('chartWeatherCorr'), {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: `Temp vs Count (r=${corr.temperature_vs_count || '?'})`,
+          data: points,
+          backgroundColor: 'rgba(220,38,38,0.4)',
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { title: { display: true, text: 'Temperature (°C)' } },
+          y: { title: { display: true, text: 'Mosquito Count' }, beginAtZero: true }
+        }
+      }
+    });
+  } catch (e) { console.error('Weather correlation error', e); }
+}
+
+// ---------- TAB 7: TRAP PERFORMANCE ----------
+async function loadTrapsTab() {
+  setStatus('Loading...', 'loading');
+  try {
+    const data = await apiFetch('/geo/density-by-area');
+    // Top 20 bar chart
+    const top20 = data.slice(0, 20);
+    const labels = top20.map(d => d.city);
+    const counts = top20.map(d => d.count);
+
+    destroyChart('trapBar');
+    charts.trapBar = new Chart(document.getElementById('chartTrapBar'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Records', data: counts,
+          backgroundColor: COLORS.slice(0, 20), borderWidth: 0, borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+
+    // Table — all areas
+    const tbody = document.querySelector('#trapTable tbody');
+    tbody.innerHTML = '';
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.city}</td><td>${r.state||'-'}</td><td>${fmtNum(r.count)}</td>
+        <td>${r.species_count}</td><td>${r.center_lat}</td><td>${r.center_lng}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    setStatus('Ready', 'ready');
+  } catch (e) {
+    setStatus('Error', 'error');
+    console.error(e);
+    document.querySelector('#trapTable tbody').innerHTML = '<tr><td colspan="6" class="error-msg">Error loading data</td></tr>';
+  }
+}
+
+// ---------- TAB 8: EXECUTIVE SUMMARY ----------
+async function loadExecutiveTab() {
+  setStatus('Loading...', 'loading');
+  try {
+    const [kpi, risk, species] = await Promise.all([
+      apiFetch('/kpi'),
+      apiFetch('/risk/scores'),
+      apiFetch('/species/breakdown')
+    ]);
+
+    // KPI scorecard
+    document.getElementById('execTotal').textContent = fmtNum(kpi.total_records);
+    document.getElementById('execSpecies').textContent = fmtNum(kpi.total_species);
+    document.getElementById('execAreas').textContent = fmtNum(kpi.total_areas);
+    document.getElementById('execConf').textContent = kpi.avg_confidence != null ? kpi.avg_confidence.toFixed(3) : '—';
+
+    // Brief text
+    const topSpecies = species.length > 0 ? species[0].detected_name : 'N/A';
+    const topRisk = risk.length > 0 ? risk[0].city : 'N/A';
+    document.getElementById('execBrief').innerHTML =
+      `<strong>Executive Summary:</strong> The monitoring system has recorded a total of <strong>${fmtNum(kpi.total_records)}</strong> observations ` +
+      `covering <strong>${fmtNum(kpi.total_species)}</strong> species across <strong>${fmtNum(kpi.total_areas)}</strong> active areas. ` +
+      `Data spans from <strong>${kpi.date_from || '?'}</strong> to <strong>${kpi.date_to || '?'}</strong>. ` +
+      `The most commonly detected species is <strong><em>${topSpecies}</em></strong>` +
+      (species.length > 0 ? ` (${fmtNum(species[0].count)} records, ${species[0].pct}%)` : '') + '. ' +
+      `The highest risk area is <strong>${topRisk}</strong>` +
+      (risk.length > 0 ? ` (risk score: ${risk[0].risk_score})` : '') + '. ' +
+      `Average AI classification confidence: <strong>${kpi.avg_confidence != null ? kpi.avg_confidence.toFixed(3) : '—'}</strong> across <strong>${fmtNum(kpi.total_models)}</strong> model versions.`;
+
+    // Top 5 risk
+    const riskTbody = document.querySelector('#execRiskTable tbody');
+    riskTbody.innerHTML = '';
+    risk.slice(0, 5).forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><b>${r.city}</b></td><td>${fmtNum(r.density)}</td><td>${fmtNum(r.vector_count)}</td><td>${riskBadge(r.risk_score)}</td>`;
+      riskTbody.appendChild(tr);
+    });
+
+    // Top 5 species
+    const speciesTbody = document.querySelector('#execSpeciesTable tbody');
+    speciesTbody.innerHTML = '';
+    species.slice(0, 5).forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><b><em>${r.detected_name}</em></b></td><td>${fmtNum(r.count)}</td><td>${r.pct}%</td><td>${r.avg_confidence}</td>`;
+      speciesTbody.appendChild(tr);
+    });
+
+    setStatus('Ready', 'ready');
+  } catch (e) {
+    setStatus('Error', 'error');
+    document.getElementById('execBrief').innerHTML = '<div class="error-msg">Error loading executive summary</div>';
+    console.error(e);
+  }
+}
+
+// ---------- INITIALIZATION ----------
+async function init() {
+  setStatus('Loading...', 'loading');
+  try {
+    await loadFiltersDropdowns();
+    tabLoaded.overview = true;
+    await loadOverview();
+  } catch (e) {
+    setStatus('Error', 'error');
+    console.error('Init error', e);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

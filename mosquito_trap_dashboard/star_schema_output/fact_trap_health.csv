@@ -1,0 +1,5 @@
+HealthKey,DateKey,AreaKey,TrapKey,StatusKey,check_time,battery_level,signal_strength,error_code
+1,20260315,1,1,1,2026-03-15 09:00:00,84,,
+2,20260314,1,2,1,2026-03-14 10:20:00,73,,
+3,20260310,2,3,2,2026-03-10 08:30:00,42,,
+4,20260312,3,4,3,2026-03-12 14:00:00,15,,

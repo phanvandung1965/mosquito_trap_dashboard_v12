@@ -1,0 +1,190 @@
+import csv
+import json
+from pathlib import Path
+
+BASE = Path(__file__).resolve().parent
+SRC = BASE / "tracking_view.csv"
+OUT = BASE / "dashboard_v5_1.html"
+
+rows = []
+with SRC.open(newline="", encoding="utf-8") as f:
+    for r in csv.DictReader(f):
+        r["number_of_mosquitoes"] = int(r.get("number_of_mosquitoes", 0) or 0)
+        rows.append(r)
+
+html = f"""<!doctype html>
+<html lang=\"vi\">
+<head>
+  <meta charset=\"utf-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>Mosquito Trap Dashboard V5.1</title>
+  <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
+  <style>
+    body {{ font-family: Arial,sans-serif; margin: 16px; background:#f6f8fc; color:#1f2937; }}
+    .top {{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }}
+    .badge {{ background:#ecfdf3; color:#027a48; border:1px solid #a6f4c5; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; }}
+    .grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:14px 0; }}
+    .card {{ background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); }}
+    .label {{ font-size:12px; color:#6b7280; }}
+    .val {{ font-size:24px; font-weight:700; }}
+    .filters {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }}
+    select,input {{ width:100%; padding:8px; border:1px solid #d1d5db; border-radius:8px; background:#fff; }}
+    .actions {{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }}
+    button {{ border:1px solid #d1d5db; background:#fff; padding:8px 10px; border-radius:8px; cursor:pointer; }}
+    table {{ width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; }}
+    th,td {{ border-bottom:1px solid #eef2f7; padding:8px; text-align:left; font-size:14px; }}
+    th {{ background:#f3f6fb; position:sticky; top:0; cursor:pointer; }}
+    .small {{ font-size:12px; color:#6b7280; }}
+    @media (max-width: 900px) {{ .grid,.filters {{ grid-template-columns:1fr 1fr; }} }}
+    @media (max-width: 600px) {{ .grid,.filters {{ grid-template-columns:1fr; }} .val {{ font-size:20px; }} }}
+  </style>
+</head>
+<body>
+  <div class=\"top\">
+    <h2 style=\"margin:0\">Mosquito Trap Dashboard V5.1</h2>
+    <div>
+      <span class=\"badge\">đang thực hiện</span>
+      <span class=\"small\" id=\"lastUpdated\"></span>
+    </div>
+  </div>
+
+  <div class=\"grid\">
+    <div class=\"card\"><div class=\"label\">Tổng muỗi</div><div class=\"val\" id=\"kTotal\"></div></div>
+    <div class=\"card\"><div class=\"label\">Số bản ghi</div><div class=\"val\" id=\"kRows\"></div></div>
+    <div class=\"card\"><div class=\"label\">Số khu vực</div><div class=\"val\" id=\"kAreas\"></div></div>
+    <div class=\"card\"><div class=\"label\">Số bẫy</div><div class=\"val\" id=\"kTraps\"></div></div>
+  </div>
+
+  <div class=\"filters\">
+    <select id=\"fDate\"><option value=\"\">Tất cả date</option></select>
+    <select id=\"fArea\"><option value=\"\">Tất cả area</option></select>
+    <select id=\"fTrap\"><option value=\"\">Tất cả trap</option></select>
+    <select id=\"fMosq\"><option value=\"\">Tất cả mosquito_name</option></select>
+  </div>
+
+  <div class=\"actions\">
+    <input id=\"q\" placeholder=\"Tìm nhanh area/trap/mosquito...\" />
+    <button onclick=\"resetFilters()\">Reset filter</button>
+    <button onclick=\"downloadFilteredCSV()\">Tải CSV đã lọc</button>
+  </div>
+
+  <div class=\"card\" style=\"margin-bottom:12px;\"><canvas id=\"c1\" height=\"90\"></canvas></div>
+  <table>
+    <thead>
+      <tr>
+        <th onclick=\"setSort('date')\">date</th>
+        <th onclick=\"setSort('area')\">area</th>
+        <th onclick=\"setSort('trap')\">trap</th>
+        <th onclick=\"setSort('mosquito_name')\">mosquito_name</th>
+        <th onclick=\"setSort('number_of_mosquitoes')\">number_of_mosquitoes</th>
+      </tr>
+    </thead>
+    <tbody id=\"tb\"></tbody>
+  </table>
+
+<script>
+const data = {json.dumps(rows, ensure_ascii=False)};
+let chart = null;
+let sortKey = 'date', sortDir = 'asc';
+
+function uniq(vals) {{ return [...new Set(vals.filter(Boolean))].sort(); }}
+function fill(id, vals) {{
+  const el=document.getElementById(id);
+  vals.forEach(v=>{{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); }});
+}}
+fill('fDate', uniq(data.map(x=>x.date.slice(0,10))));
+fill('fArea', uniq(data.map(x=>x.area)));
+fill('fTrap', uniq(data.map(x=>x.trap)));
+fill('fMosq', uniq(data.map(x=>x.mosquito_name)));
+
+document.getElementById('lastUpdated').textContent = 'Cập nhật: ' + new Date().toLocaleString('vi-VN');
+
+function getFiltered() {{
+  const d=document.getElementById('fDate').value;
+  const a=document.getElementById('fArea').value;
+  const t=document.getElementById('fTrap').value;
+  const m=document.getElementById('fMosq').value;
+  const q=(document.getElementById('q').value||'').toLowerCase().trim();
+  let out = data.filter(r => (!d || r.date.startsWith(d)) && (!a || r.area===a) && (!t || r.trap===t) && (!m || r.mosquito_name===m));
+  if(q) out = out.filter(r => [r.area,r.trap,r.mosquito_name,r.date].join(' ').toLowerCase().includes(q));
+  return out;
+}}
+
+function setSort(k) {{
+  if(sortKey===k) sortDir = sortDir==='asc' ? 'desc' : 'asc';
+  else {{ sortKey=k; sortDir='asc'; }}
+  render();
+}}
+
+function sortedRows(rows) {{
+  const r=[...rows];
+  r.sort((a,b)=>{{
+    const x=a[sortKey], y=b[sortKey];
+    const c = (sortKey==='number_of_mosquitoes') ? (Number(x)-Number(y)) : String(x).localeCompare(String(y));
+    return sortDir==='asc' ? c : -c;
+  }});
+  return r;
+}}
+
+function renderKpi(rows) {{
+  document.getElementById('kTotal').textContent = rows.reduce((s,r)=>s+Number(r.number_of_mosquitoes||0),0);
+  document.getElementById('kRows').textContent = rows.length;
+  document.getElementById('kAreas').textContent = new Set(rows.map(r=>r.area)).size;
+  document.getElementById('kTraps').textContent = new Set(rows.map(r=>r.trap)).size;
+}}
+
+function renderTable(rows) {{
+  const tb=document.getElementById('tb'); tb.innerHTML='';
+  rows.forEach(r=>{{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${{r.date}}</td><td>${{r.area}}</td><td>${{r.trap}}</td><td>${{r.mosquito_name}}</td><td>${{r.number_of_mosquitoes}}</td>`;
+    tb.appendChild(tr);
+  }});
+}}
+
+function renderChart(rows) {{
+  const by={{}}; rows.forEach(r=>by[r.area]=(by[r.area]||0)+Number(r.number_of_mosquitoes||0));
+  const labels=Object.keys(by), vals=labels.map(k=>by[k]);
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById('c1'), {{
+    type:'bar',
+    data:{{labels,datasets:[{{label:'Mosquito by area',data:vals}}]}},
+    options:{{responsive:true,plugins:{{legend:{{display:false}}}}}}
+  }});
+}}
+
+function resetFilters() {{
+  ['fDate','fArea','fTrap','fMosq'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('q').value='';
+  sortKey='date'; sortDir='asc';
+  render();
+}}
+
+function toCSV(rows) {{
+  const cols=['date','area','trap','mosquito_name','number_of_mosquitoes'];
+  const esc = v => '"'+String(v??'').replaceAll('"','""')+'"';
+  return [cols.join(','), ...rows.map(r=>cols.map(c=>esc(r[c])).join(','))].join('\n');
+}}
+function downloadFilteredCSV() {{
+  const rows = sortedRows(getFiltered());
+  const blob = new Blob([toCSV(rows)], {{type:'text/csv;charset=utf-8;'}});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tracking_view_filtered.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}}
+
+function render() {{
+  const fr = sortedRows(getFiltered());
+  renderKpi(fr); renderTable(fr); renderChart(fr);
+}}
+
+['fDate','fArea','fTrap','fMosq','q'].forEach(id=>document.getElementById(id).addEventListener('input', render));
+render();
+</script>
+</body>
+</html>"""
+
+OUT.write_text(html, encoding="utf-8")
+print(f"Wrote {OUT}")

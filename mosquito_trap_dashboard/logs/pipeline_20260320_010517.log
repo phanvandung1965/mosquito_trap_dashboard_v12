@@ -1,0 +1,23 @@
+Starting pipeline at Fri Mar 20 01:05:34 AWST 2026
+Running ETL to create star schema...
+{
+  "generated_at": "2026-03-20 01:05:51",
+  "output_dir": "/home/dung/gdrive_mount/openclaw/projects/mosquito_trap_dashboard/star_schema_output",
+  "counts": {
+    "dim_date": 10,
+    "dim_area": 3,
+    "dim_trap": 4,
+    "dim_status": 3,
+    "fact_observation": 6,
+    "fact_trap_health": 4,
+    "fact_alert": 1
+  }
+}
+ETL finished.
+Calculating KPIs...
+Wrote /home/dung/gdrive_mount/openclaw/projects/mosquito_trap_dashboard/kpi_snapshot.json
+KPI calculation finished.
+Generating dashboard...
+Wrote /home/dung/gdrive_mount/openclaw/projects/mosquito_trap_dashboard/dashboard_v5_1.html
+Dashboard generated: dashboard_v5_1.html
+Pipeline finished successfully at Fri Mar 20 01:06:08 AWST 2026

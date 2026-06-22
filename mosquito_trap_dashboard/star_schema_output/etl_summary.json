@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-03-27 11:10:07",
+  "output_dir": "/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard/star_schema_output",
+  "counts": {
+    "dim_date": 10,
+    "dim_area": 3,
+    "dim_trap": 4,
+    "dim_status": 3,
+    "fact_observation": 6,
+    "fact_trap_health": 4,
+    "fact_alert": 1
+  }
+}

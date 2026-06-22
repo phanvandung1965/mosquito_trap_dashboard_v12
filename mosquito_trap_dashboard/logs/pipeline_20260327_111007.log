@@ -1,0 +1,34 @@
+Starting pipeline at Fri Mar 27 11:10:07 AWST 2026
+Running ETL to create star schema...
+{
+  "generated_at": "2026-03-27 11:10:07",
+  "output_dir": "/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard/star_schema_output",
+  "counts": {
+    "dim_date": 10,
+    "dim_area": 3,
+    "dim_trap": 4,
+    "dim_status": 3,
+    "fact_observation": 6,
+    "fact_trap_health": 4,
+    "fact_alert": 1
+  }
+}
+ETL finished.
+Loading star schema into SQLite...
+SQLite load completed
+DB: /home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard/data/mosquito_trap_dashboard.db
+- dim_date: 10 rows
+- dim_area: 3 rows
+- dim_trap: 4 rows
+- dim_status: 3 rows
+- fact_observation: 6 rows
+- fact_trap_health: 4 rows
+- fact_alert: 1 rows
+SQLite load finished.
+Calculating KPIs...
+Wrote /home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard/kpi_snapshot.json
+KPI calculation finished.
+Generating dashboard...
+Wrote /home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard/dashboard_v5_1.html
+Dashboard generated: dashboard_v5_1.html
+Pipeline finished successfully at Fri Mar 27 11:10:08 AWST 2026

@@ -1,0 +1,7 @@
+127.0.0.1 - - [29/Mar/2026 09:14:55] "GET /dashboard_v9.01.html HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:15:15] "GET /dashboard_v9.01.html HTTP/1.1" 304 -
+127.0.0.1 - - [29/Mar/2026 09:15:55] code 404, message File not found
+127.0.0.1 - - [29/Mar/2026 09:15:55] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+127.0.0.1 - - [29/Mar/2026 09:15:55] code 404, message File not found
+127.0.0.1 - - [29/Mar/2026 09:15:55] "GET /api/data HTTP/1.1" 404 -
+127.0.0.1 - - [29/Mar/2026 09:16:23] "GET /dashboard_v9.01.html HTTP/1.1" 304 -

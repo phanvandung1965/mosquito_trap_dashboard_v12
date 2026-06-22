@@ -1,0 +1,79 @@
+[2026-04-03 02:00:02 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+sending incremental file list
+./
+api_server.py
+dashboard_v9.html
+data/
+data/mosquito_trap_dashboard.db
+data/official/
+deploy/
+deploy/README_DEPLOY_DOMAIN.md
+deploy/deploy_mosquito_domain.sh
+deploy/sync_from_gdrive_mosquito.sh
+deploy/verify_mosquito_domain.sh
+logs/
+saas_stack_mvp/
+saas_stack_mvp/backend/
+saas_stack_mvp/backend/sql/
+saas_stack_mvp/backend/src/
+saas_stack_mvp/frontend/
+saas_stack_mvp/frontend/src/
+snapshots/
+snapshots/SNAPSHOT_INDEX.md
+snapshots/pre_saas_restructure_20260328_200819/
+snapshots/pre_saas_restructure_20260328_200819/deploy/
+
+sent 4.20M bytes  received 236 bytes  88.32K bytes/sec
+total size is 10.58M  speedup is 2.52
+[2026-04-03 02:00:50 AWST] HEALTH http://127.0.0.1:7807/ -> HTTP 000
+[2026-04-03 02:00:50 AWST] DONE sync
+[OK] Synced successfully at 20260403_020001
+[2026-04-04 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+sending incremental file list
+./
+data/
+data/mosquito_trap_dashboard.db
+snapshots/
+snapshots/SNAPSHOT_INDEX.md
+
+sent 4.17M bytes  received 82 bytes  124.50K bytes/sec
+total size is 10.58M  speedup is 2.54
+[2026-04-04 02:00:35 AWST] HEALTH http://127.0.0.1:8787/dashboard_v9.html -> HTTP 000
+[2026-04-04 02:00:35 AWST] DONE sync
+[OK] Synced successfully at 20260404_020001
+[2026-04-05 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+sending incremental file list
+
+sent 3.52K bytes  received 27 bytes  63.91 bytes/sec
+total size is 10.58M  speedup is 2,984.19
+[2026-04-05 02:00:58 AWST] HEALTH http://127.0.0.1:8787/dashboard_v9.html -> HTTP 000
+[2026-04-05 02:00:58 AWST] DONE sync
+[OK] Synced successfully at 20260405_020001
+[2026-04-06 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+sending incremental file list
+
+sent 3.52K bytes  received 27 bytes  62.78 bytes/sec
+total size is 10.58M  speedup is 2,984.19
+[2026-04-06 02:00:59 AWST] HEALTH http://127.0.0.1:8787/dashboard_v9.html -> HTTP 000
+[2026-04-06 02:00:59 AWST] DONE sync
+[OK] Synced successfully at 20260406_020001
+[2026-04-07 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+sending incremental file list
+
+sent 557 bytes  received 27 bytes  21.24 bytes/sec
+total size is 0  speedup is 0.00
+[2026-04-07 02:00:29 AWST] HEALTH http://127.0.0.1:8787/dashboard_v9.html -> HTTP 000
+[2026-04-07 02:00:29 AWST] DONE sync
+[OK] Synced successfully at 20260407_020001
+[2026-04-08 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+[2026-04-08 02:00:03 AWST] ERROR: source path not found: /home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard
+[2026-04-09 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+[2026-04-09 02:00:02 AWST] ERROR: source path not found: /home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard
+[2026-04-10 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+[2026-04-10 02:00:03 AWST] ERROR: source path not found: /home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard
+[2026-04-11 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+[2026-04-11 02:00:03 AWST] ERROR: source path not found: /home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard
+[2026-04-12 02:00:01 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+[2026-04-12 02:00:03 AWST] ERROR: source path not found: /home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard
+[2026-04-13 02:01:32 AWST] START sync SRC=/home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard -> DST=/home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard
+[2026-04-13 02:01:34 AWST] ERROR: source path not found: /home/dung/gdrive_mount/openclaw/projects/MOSQUITO_trap_dashboard

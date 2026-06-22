@@ -1,0 +1,5 @@
+trap_id,trap_code,area_id,install_date,trap_type,status,last_maintenance_at,battery_level
+1,TRAP-HCM-001,A01,2026-02-01,optical,active,2026-03-15 09:00:00,84
+2,TRAP-HCM-002,A01,2026-02-03,optical,active,2026-03-14 10:20:00,73
+3,TRAP-HCM-010,A02,2026-02-05,sticky,maintenance,2026-03-10 08:30:00,42
+4,TRAP-HCM-015,A03,2026-02-09,optical,offline,2026-03-12 14:00:00,15

@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mosquito Trap Dashboard v9.01</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { font-family: Arial,sans-serif; margin: 16px; background:#f6f8fc; color:#1f2937; }
+    .top { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .badge { background:#ecfdf3; color:#027a48; border:1px solid #a6f4c5; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:14px 0; }
+    .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    .card { background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .label { font-size:12px; color:#6b7280; }
+    .val { font-size:24px; font-weight:700; }
+    .filters { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+    select,input { width:100%; padding:8px; border:1px solid #d1d5db; border-radius:8px; background:#fff; }
+    .actions { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+    button { border:1px solid #d1d5db; background:#fff; padding:8px 10px; border-radius:8px; cursor:pointer; }
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; }
+    th,td { border-bottom:1px solid #eef2f7; padding:8px; text-align:left; font-size:14px; }
+    #map { height:320px; border-radius:10px; }
+    th { background:#f3f6fb; position:sticky; top:0; cursor:pointer; user-select:none; }
+    .small { font-size:12px; color:#6b7280; }
+    
+    th.sort-key { background: #eef2f7; color: #1f2937; }
+    th .sort-indicator { display: inline-block; width: 1em; text-align: center; }
+    th.sort-asc .sort-indicator::after { content: '▲'; font-size: 0.8em; }
+    th.sort-desc .sort-indicator::after { content: '▼'; font-size: 0.8em; }
+
+    .map-label { background-color: transparent; border: none; box-shadow: none; font-weight: bold; color: white; font-size: 10px; text-shadow: 1px 1px 2px #000; }
+    .fallback-box { background:#fff; border:1px dashed #d1d5db; border-radius:10px; padding:12px; min-height:150px; }
+    .fallback-note { font-size:12px; color:#6b7280; margin-bottom:8px; }
+    .bar-list { display:flex; flex-direction:column; gap:8px; }
+    .bar-row { display:grid; grid-template-columns:minmax(120px, 1.5fr) 4fr auto; gap:8px; align-items:center; font-size:12px; }
+    .bar-track { background:#eef2f7; border-radius:999px; height:12px; overflow:hidden; }
+    .bar-fill { background:#10b981; height:100%; }
+    .line-svg { width:100%; height:170px; display:block; background:#fcfdff; border-radius:8px; }
+    .map-points { max-height:320px; overflow:auto; display:flex; flex-direction:column; gap:6px; }
+    .map-point { border:1px solid #eef2f7; border-radius:8px; padding:8px; font-size:12px; background:#fcfdff; }
+
+    @media (max-width: 900px) { .grid,.filters,.charts-grid { grid-template-columns:1fr 1fr; } }
+
+    .canvas-wrap { position:relative; min-height:170px; }
+    .canvas-wrap canvas { width:100% !important; height:170px !important; }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns:1fr; } }
+    @media (max-width: 600px) { .grid,.filters { grid-template-columns:1fr; } .val { font-size:20px; } }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h2 style="margin:0">Mosquito Trap Dashboard</h2>
+    <div>
+      <span class="badge">Ready</span>
+      <span class="small" id="lastUpdated"></span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Total Mosquitoes</div><div class="val" id="kTotal"></div></div>
+    <div class="card"><div class="label">Total Records</div><div class="val" id="kRows"></div></div>
+    <div class="card"><div class="label">Total Areas</div><div class="val" id="kAreas"></div></div>
+    <div class="card"><div class="label">Total Traps</div><div class="val" id="kTraps"></div></div>
+  </div>
+
+  <div class="filters">
+    <select id="fDate"><option value="ALL_YEAR">All Years</option></select>
+    <select id="fArea"><option value="">All Areas</option></select>
+    <select id="fTrap"><option value="">All Traps</option></select>
+    <select id="fMosq"><option value="">All Species</option></select>
+  </div>
+
+  <div class="actions">
+    <input id="q" placeholder="Quick search area/trap/species..." />
+    <button onclick="resetFilters()">Reset Filters</button>
+    <button onclick="downloadFilteredCSV()">Download Filtered CSV</button>
+    <button onclick="downloadCharts()">Download Charts (PNG)</button>
+  </div>
+  
+  <div class="charts-grid">
+    <div class="card"><div class="canvas-wrap"><canvas id="cLine" height="150"></canvas></div></div>
+    <div class="card"><div class="canvas-wrap"><canvas id="cBar" height="150"></canvas></div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <h3 style="margin-top:0">GPS Map</h3>
+    <div id="map"></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th id="h-mosquito_name" onclick="setSort('mosquito_name')">mosquito_name<span class="sort-indicator"></span></th>
+        <th id="h-total_mosquitoes" onclick="setSort('total_mosquitoes')">total_mosquitoes<span class="sort-indicator"></span></th>
+        <th id="h-records" onclick="setSort('records')">records<span class="sort-indicator"></span></th>
+      </tr>
+    </thead>
+    <tbody id="tb"></tbody>
+  </table>
+
+<script>
+let data = [];
+let barChart = null, lineChart = null;
+let map = null;
+let mapMarkersLayer = null;
+let sortKey = 'total_mosquitoes', sortDir = 'desc';
+
+const LAT_KEYS = ['gps_lat', 'lat', 'latitude', 'y', 'LAT', 'Latitude'];
+const LNG_KEYS = ['gps_lng', 'lng', 'lon', 'longitude', 'x', 'LNG', 'Longitude'];
+const DEFAULT_CENTER = [-25.2744, 133.7751]; // Australia center
+const DEFAULT_ZOOM = 4;
+
+function mapAPIDataToDashboard(apiData) {
+  return apiData.map(obj => {
+    // Standardize field names for dashboard compatibility
+    obj.date = obj.date || ''; // Ensure date field exists
+    obj.area = obj.city || obj.location_name || obj.state || obj.region || obj.subregion || obj.lga || 'Unknown Area';
+    obj.trap = obj.sitecode_cd || obj.agency_cd || obj.name || 'Unknown Trap';
+    obj.mosquito_name = obj.detected_name || obj.orig_detected_name || 'Unknown Species';
+    obj.number_of_mosquitoes = Number(obj.number_of_mosquitoes) || 1; // Default to 1 if not explicit
+
+    // Extract and standardize lat/lng
+    const lat = getLat(obj);
+    const lng = getLng(obj);
+    obj.__lat = Number.isFinite(lat) ? lat : null;
+    obj.__lng = Number.isFinite(lng) ? lng : null;
+
+    return obj;
+  });
+}
+
+
+
+function getNumericByKeys(obj, keys) {
+  for (const k of keys) {
+    const raw = obj[k];
+    if (raw === undefined || raw === null || raw === '') continue;
+    const n = Number(raw);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function getLat(row) {
+  return getNumericByKeys(row, LAT_KEYS);
+}
+
+function getLng(row) {
+  return getNumericByKeys(row, LNG_KEYS);
+}
+
+async function main() {
+  try {
+    const _host = window.location.hostname || '127.0.0.1';
+    const _port = '7807';
+    const apiCandidates = [
+      '/api/data',
+      `http://${_host}:${_port}/api/data`,
+      `http://127.0.0.1:${_port}/api/data`,
+      `http://192.168.105.22:${_port}/api/data`
+    ];
+    let jsonData = null;
+    let lastErr = null;
+    for (const apiUrl of apiCandidates) {
+      try {
+        const response = await fetch(apiUrl, {signal: AbortSignal.timeout(15000)});
+        if (!response.ok) throw new Error(`HTTP ${response.status} @ ${apiUrl}`);
+        jsonData = await response.json();
+        console.log('Data loaded from:', apiUrl, 'records:', jsonData.length);
+        break;
+      } catch (err) {
+        console.warn('API try failed:', apiUrl, err.message);
+        lastErr = err;
+      }
+    }
+    if (!jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
+      throw lastErr || new Error('No data source available');
+    }
+
+    data = mapAPIDataToDashboard(jsonData);
+    
+    buildDateFilterOptions(data);
+    fill('fArea', uniq(data.map(x=>x.area)));
+    fill('fTrap', uniq(data.map(x=>x.trap)));
+    fill('fMosq', uniq(data.map(x=>x.mosquito_name)));
+
+    document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleString('en-AU');
+    
+    map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 18 }).addTo(map);
+    mapMarkersLayer = L.layerGroup().addTo(map);
+
+    render();
+  } catch(e) {
+    console.error("Failed to load or parse data:", e);
+    document.body.innerHTML = `<div style="text-align:center;padding:40px;"><h2>Data Loading Error</h2><p>Cannot load data from API. Please make sure the API server is running and reachable.</p><pre>${e.message}</pre></div>`;
+  }
+}
+
+function uniq(vals) { return [...new Set(vals.filter(Boolean))].sort(); }
+function fill(id, vals) {
+  const el=document.getElementById(id);
+  // Clear existing options, keeping only the first (default/ALL) option
+  while (el.options.length > 1) {
+    el.remove(1);
+  }
+  vals.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+}
+
+function buildDateFilterOptions(rows) {
+  const fDate = document.getElementById('fDate');
+  const years = [...new Set(rows.map(r => (r.date || '').slice(0, 4)).filter(Boolean))].sort();
+
+  years.forEach(y => {
+    const yearOption = document.createElement('option');
+    yearOption.value = `YEAR:${y}`;
+    yearOption.textContent = `Year ${y}`;
+    fDate.appendChild(yearOption);
+
+    const months = [...new Set(
+      rows
+        .filter(r => (r.date || '').startsWith(y + '-'))
+        .map(r => (r.date || '').slice(0, 7))
+        .filter(Boolean)
+    )].sort();
+
+    months.forEach(m => {
+      const monthOption = document.createElement('option');
+      monthOption.value = `MONTH:${m}`;
+      monthOption.textContent = `  └ Month ${m}`;
+      fDate.appendChild(monthOption);
+    });
+  });
+}
+
+function getFiltered() {
+  const d = document.getElementById('fDate').value;
+  const a = document.getElementById('fArea').value;
+  const t = document.getElementById('fTrap').value;
+  const m = document.getElementById('fMosq').value;
+  const q = (document.getElementById('q').value || '').toLowerCase().trim();
+
+  let dateFilterFunc = r => true;
+  if (d) {
+    if (d === 'ALL_YEAR') {
+      // No date filter needed for all years, includes all data.
+    } else if (d.startsWith('YEAR:')) {
+      const year = d.split(':')[1];
+      dateFilterFunc = r => (r.date || '').startsWith(year);
+    } else if (d.startsWith('MONTH:')) {
+      const month = d.split(':')[1];
+      dateFilterFunc = r => (r.date || '').startsWith(month);
+    }
+  }
+
+  let out = data.filter(r =>
+    dateFilterFunc(r) &&
+    (!a || r.area === a) &&
+    (!t || r.trap === t) &&
+    (!m || r.mosquito_name === m)
+  );
+
+  if (q) {
+    out = out.filter(r => [r.area, r.trap, r.mosquito_name, r.date].join(' ').toLowerCase().includes(q));
+  }
+  return out;
+}
+
+function setSort(k) {
+  if(sortKey===k) {
+    sortDir = sortDir==='asc' ? 'desc' : 'asc';
+  } else {
+    sortKey = k;
+    sortDir = ['total_mosquitoes','records'].includes(k) ? 'desc' : 'asc';
+  }
+  render();
+}
+
+function sortedRows(rows) {
+  const r=[...rows];
+  r.sort((a,b)=>{
+    const x=a[sortKey], y=b[sortKey];
+    const numericKeys = ['number_of_mosquitoes', 'total_mosquitoes', 'records'];
+    const c = numericKeys.includes(sortKey)
+      ? (Number(x)-Number(y))
+      : String(x ?? '').localeCompare(String(y ?? ''));
+    return sortDir==='asc' ? c : -c;
+  });
+  return r;
+}
+
+function updateSortUI() {
+    document.querySelectorAll('th[id^="h-"]').forEach(th => {
+        th.classList.remove('sort-key', 'sort-asc', 'sort-desc');
+    });
+    const activeTh = document.getElementById(`h-${sortKey}`);
+    if (activeTh) {
+        activeTh.classList.add('sort-key', `sort-${sortDir}`);
+    }
+}
+
+function renderKpi(rows) {
+  document.getElementById('kTotal').textContent = rows.reduce((s,r)=>s+Number(r.number_of_mosquitoes||0),0);
+  document.getElementById('kRows').textContent = rows.length;
+  document.getElementById('kAreas').textContent = new Set(rows.map(r=>r.area)).size;
+  document.getElementById('kTraps').textContent = new Set(rows.map(r=>r.trap)).size;
+}
+
+function aggregateBySpecies(rows) {
+  const by = {};
+  rows.forEach(r => {
+    const key = r.mosquito_name || 'Unknown';
+    if (!by[key]) by[key] = { mosquito_name: key, total_mosquitoes: 0, records: 0 };
+    by[key].total_mosquitoes += Number(r.number_of_mosquitoes || 0);
+    by[key].records += 1;
+  });
+  return Object.values(by);
+}
+
+function renderTable(rows) {
+  const tb=document.getElementById('tb'); tb.innerHTML='';
+  const aggRows = sortedRows(aggregateBySpecies(rows));
+  aggRows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${r.mosquito_name}</td><td>${r.total_mosquitoes}</td><td>${r.records}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderBarChart(rows) {
+  const by={}; rows.forEach(r=>by[r.area]=(by[r.area]||0)+Number(r.number_of_mosquitoes||0));
+  const labels=Object.keys(by), vals=labels.map(k=>by[k]);
+  if(barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('cBar'), {
+    type:'bar',
+    data:{labels,datasets:[{label:'Mosquitoes by Area',data:vals, backgroundColor: '#a6f4c5', borderColor: '#027a48', borderWidth: 1 }]},
+    options:{responsive:true,maintainAspectRatio: false,plugins:{legend:{display:false}, title: { display: true, text: 'Total Mosquitoes by Area' }}}
+  });
+}
+
+function renderLineChart(rows) {
+    const dateFilter = document.getElementById('fDate').value;
+    let unit = 'day';
+    let label = 'Mosquitoes by Day';
+    let title = 'Mosquito Population Trend by Day';
+    let getGroupKey = (date) => (date || '').slice(0, 10); // Default to day
+
+    if (dateFilter === 'ALL_YEAR') {
+        unit = 'year';
+        label = 'Mosquitoes by Year';
+        title = 'Mosquito Population Trend by Year';
+        getGroupKey = (date) => (date || '').slice(0, 4) + '-01-01'; // "2024" -> "2024-01-01" for Chart.js time parser
+    } else if (dateFilter.startsWith('YEAR:')) {
+        unit = 'month';
+        label = 'Mosquitoes by Month';
+        title = 'Mosquito Population Trend by Month';
+        getGroupKey = (date) => (date || '').slice(0, 7) + '-01'; // "2024-11" -> "2024-11-01"
+    }
+    // Day-level is the fallback if a specific month is chosen from the hierarchy.
+
+    const byDate = {};
+    rows.forEach(r => {
+        const key = getGroupKey(r.date);
+        if (key) {
+          byDate[key] = (byDate[key] || 0) + Number(r.number_of_mosquitoes || 0);
+        }
+    });
+
+    const sortedKeys = Object.keys(byDate).sort();
+    const chartData = sortedKeys.map(key => ({ x: key, y: byDate[key] }));
+
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(document.getElementById('cLine'), {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: label,
+                data: chartData,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: unit },
+                    title: { display: true, text: 'Time' }
+                },
+                y: {
+                    title: { display: true, text: 'Mosquito Count' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: title }
+            }
+        }
+    });
+}
+
+function renderMap(rows) {
+  if (!map) return;
+  mapMarkersLayer.clearLayers();
+  
+  const points = rows.filter(r => r.__lat != null && r.__lng != null);
+
+  points.forEach(r => {
+    const popupContent = `<b>Trap:</b> ${r.trap}<br/><b>Area:</b> ${r.area}<br/><b>Species:</b> ${r.mosquito_name}<br/><b>Count:</b> ${r.number_of_mosquitoes}<br/><b>Date:</b> ${r.date}`;
+    const tooltipContent = `${r.number_of_mosquitoes}`
+    const mk = L.circleMarker([r.__lat, r.__lng], {radius: Math.max(3, Math.log(r.number_of_mosquitoes + 1) * 2.5), color: '#e60000', weight: 1, opacity: 0.8, fillOpacity: 0.6 })
+      .bindPopup(popupContent)
+      .bindTooltip(tooltipContent, { permanent: true, direction: 'center', className: 'map-label' });
+    mapMarkersLayer.addLayer(mk);
+  });
+
+  if (points.length > 0) {
+    const bounds = L.latLngBounds(points.map(p => [p.__lat, p.__lng]));
+    map.fitBounds(bounds.pad(0.1));
+  } else {
+    map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  }
+}
+
+
+function resetFilters() {
+  document.getElementById('fDate').value = 'ALL_YEAR';
+  ['fArea','fTrap','fMosq'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('q').value = '';
+  sortKey = 'total_mosquitoes';
+  sortDir = 'desc';
+  render();
+}
+
+function toCSV(rows) {
+  const cols=['date','area','trap','mosquito_name','number_of_mosquitoes','latitude','longitude'];
+  const esc = v => '\"'+String(v??'').replaceAll('\"','\"\"')+'\"';
+  return [cols.join(','), ...rows.map(r=>cols.map(c=>{
+    if (c === 'latitude') return esc(r.__lat ?? r.latitude ?? '');
+    if (c === 'longitude') return esc(r.__lng ?? r.longitude ?? '');
+    return esc(r[c]);
+  }).join(','))].join('\n');
+}
+function downloadFilteredCSV() {
+  const rows = sortedRows(getFiltered());
+  const blob = new Blob([toCSV(rows)], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tracking_view_filtered.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadCharts() {
+    if (lineChart) {
+        const a = document.createElement('a');
+        a.href = lineChart.toBase64Image();
+        a.download = 'line_chart.png';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+    if (barChart) {
+        const a = document.createElement('a');
+        a.href = barChart.toBase64Image();
+        a.download = 'bar_chart.png';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+}
+
+function render() {
+  const fr = getFiltered();
+  try { renderKpi(fr); } catch(e) { console.error('renderKpi error:', e); }
+  try { renderTable(sortedRows(fr)); } catch(e) { console.error('renderTable error:', e); }
+  try { renderBarChart(fr); } catch(e) { console.error('renderBarChart error:', e); }
+  try { renderLineChart(fr); } catch(e) { console.error('renderLineChart error:', e); }
+  try { renderMap(fr); } catch(e) { console.error('renderMap error:', e); }
+  try { updateSortUI(); } catch(e) { console.error('updateSortUI error:', e); }
+}
+
+['fDate','fArea','fTrap','fMosq','q'].forEach(id=>document.getElementById(id).addEventListener('input', render));
+
+main();
+</script>
+</body>
+</html>

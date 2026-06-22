@@ -1,0 +1,27 @@
+Starting API server at http://127.0.0.1:7807 (production)
+  - Dashboard: http://127.0.0.1:7807/
+  - API Data:  http://127.0.0.1:7807/api/data
+  - Debug: OFF (set MOSQ_DEBUG=1 to enable)
+ * Serving Flask app 'api_server'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:7807
+ * Running on http://192.168.105.22:7807
+Press CTRL+C to quit
+127.0.0.1 - - [29/Mar/2026 09:32:27] "GET /dashboard_v9.01.html HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:32:57] "GET /dashboard_v9.01.html HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:33:03] "GET /dashboard_v9.01.html?v=2 HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:33:18] "GET /dashboard_v9.01.html HTTP/1.1" 304 -
+127.0.0.1 - - [29/Mar/2026 09:33:39] "GET /dashboard_v9.01.html HTTP/1.1" 304 -
+127.0.0.1 - - [29/Mar/2026 09:33:39] "GET /api/data HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:34:40] "GET /api/data HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:36:31] "GET /dashboard_v9.01.html HTTP/1.1" 304 -
+127.0.0.1 - - [29/Mar/2026 09:36:50] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [29/Mar/2026 09:36:50] "GET /api/data HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:36:57] "GET /dashboard_v9.01.html HTTP/1.1" 304 -
+127.0.0.1 - - [29/Mar/2026 09:39:44] "GET /api/data HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:45:50] "GET /dashboard_v9.01.html HTTP/1.1" 304 -
+127.0.0.1 - - [29/Mar/2026 09:46:00] "GET /api/data HTTP/1.1" 200 -
+127.0.0.1 - - [29/Mar/2026 09:51:53] "GET /dashboard_v9.01.html HTTP/1.1" 304 -
+127.0.0.1 - - [29/Mar/2026 09:52:11] "GET /api/data HTTP/1.1" 200 -

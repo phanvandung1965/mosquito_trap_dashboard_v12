@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-03-27 11:10:08",
+  "kpis": {
+    "total_traps": 4,
+    "active_traps": 2,
+    "offline_traps": 1,
+    "maintenance_traps": 1,
+    "total_mosquito_count": 139,
+    "avg_mosquito_per_active_trap": 69.5
+  },
+  "top_areas": [
+    {
+      "area_id": "A01",
+      "mosquito_count": 123
+    },
+    {
+      "area_id": "A02",
+      "mosquito_count": 12
+    },
+    {
+      "area_id": "A03",
+      "mosquito_count": 4
+    }
+  ]
+}

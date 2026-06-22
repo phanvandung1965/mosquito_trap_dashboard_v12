@@ -1,0 +1,89 @@
+============================================================
+  Mosquito Trap Dashboard — API Server V12
+============================================================
+  URL:       http://127.0.0.1:7808
+  Dashboard: http://127.0.0.1:7808/
+  V10 compat: http://127.0.0.1:7808/v10
+  Database:  /home/dung/.openclaw/workspace-VP2_codex/projects/mosquito_trap_dashboard/data/mosquito_trap_dashboard.db
+  Debug:     OFF
+  Host:      0.0.0.0
+
+  V12 Endpoints:
+    /api/v12/kpi                  - KPI summary
+    /api/v12/table                - Paginated data table
+    /api/v12/species/*            - 5 species endpoints
+    /api/v12/trends/*             - 6 trends endpoints
+    /api/v12/geo/*                - 3 geo endpoints
+    /api/v12/ai/*                 - 6 AI analysis endpoints
+    /api/v12/risk/*               - 4 risk endpoints
+    /api/v12/alerts               - Dynamic alerts
+    /api/v12/alerts/timeline       - Alert timeline
+    /api/v12/filters/*            - 3 filter endpoints
+    /api/v12/meta/refresh         - Rebuild aggregations
+    /api/v12/meta/info            - Server info
+
+  Legacy V10 Endpoints (backward compatible):
+    /api/data, /api/summary, /api/kpi, /api/table
+    /api/chart/bar, /api/chart/line, /api/map
+    /api/filters/areas, /api/filters/traps
+============================================================
+ * Serving Flask app 'api_server_v12'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:7808
+ * Running on http://192.168.105.22:7808
+Press CTRL+C to quit
+127.0.0.1 - - [11/Apr/2026 20:12:30] "GET /api/v12/meta/info HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:18:34] "HEAD / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:19:41] "GET /api/v12/meta/info HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:22:50] "GET /api/v12/meta/info HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:22:50] "HEAD / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:23:09] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:46:01] "GET /api/v12/meta/info HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:46:02] "HEAD / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:46:04] "GET /api/v12/meta/info HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 20:46:19] "GET /api/v12/meta/info HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:39] "HEAD / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:39] "GET /api/v12/meta/info HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:42] "GET /static/leaflet.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:42] "GET /static/chart.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:43] "GET /static/leaflet.markercluster_MarkerCluster.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:44] "GET /static/leaflet.markercluster_MarkerCluster.Default.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:44] "GET /static/leaflet.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:45] "GET /static/leaflet.markercluster.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:46] "GET /static/chartjs-adapter-date-fns.bundle.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:46] "GET /static/leaflet-heat.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:47] "GET /api/v12/filters/species HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:47] "GET /api/v12/filters/areas HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:48] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [11/Apr/2026 21:35:48] "GET /api/v12/kpi HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:49] "GET /api/v12/table?page=1&limit=50 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:35:58] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:06] "GET /api/v12/species/diversity HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:06] "GET /api/v12/species/by-area HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:07] "GET /api/v12/species/genus HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:09] "GET /api/v12/species/breakdown HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:11] "GET /api/v12/trends/seasonal HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:11] "GET /api/v12/trends/anomalies HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:12] "GET /api/v12/trends/daily-counts HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:12] "GET /api/v12/trends/monthly HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:16] "GET /api/v12/geo/heatmap HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:36:17] "GET /api/v12/geo/density-by-area HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:58] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:58] "GET /static/leaflet.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:58] "GET /static/leaflet.markercluster_MarkerCluster.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:58] "GET /static/chart.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:58] "GET /static/leaflet.markercluster_MarkerCluster.Default.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:58] "GET /static/chartjs-adapter-date-fns.bundle.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:59] "GET /static/leaflet.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:59] "GET /static/leaflet.markercluster.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:59] "GET /static/leaflet-heat.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:59] "GET /api/v12/filters/areas HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:59] "GET /api/v12/filters/species HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:39:59] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [11/Apr/2026 21:40:00] "GET /api/v12/kpi HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:40:00] "GET /api/v12/table?page=1&limit=50 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:40:01] "GET /api/v12/geo/heatmap HTTP/1.1" 200 -
+127.0.0.1 - - [11/Apr/2026 21:40:01] "GET /api/v12/geo/density-by-area HTTP/1.1" 200 -

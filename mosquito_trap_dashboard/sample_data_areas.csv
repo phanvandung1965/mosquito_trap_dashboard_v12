@@ -1,0 +1,4 @@
+area_id,area_name,district,ward,latitude,longitude,risk_level
+A01,Khu vực Trung tâm,Quận 1,Phường Bến Nghé,10.7769,106.7009,high
+A02,Khu vực Đông Bắc,TP Thủ Đức,Phường Linh Trung,10.8700,106.8030,medium
+A03,Khu vực Tây Nam,Bình Tân,Phường Bình Hưng Hòa,10.7900,106.6100,low
